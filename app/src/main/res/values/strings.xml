@@ -1,0 +1,10 @@
+<resources>
+	<string name="app_name">OpenCVTour</string>
+
+	<string name="hello_world">Hello world!</string>
+	<string name="action_settings">Settings</string>
+	<string name="title_activity_edit_tour_item">EditTourItemActivity</string>
+	<string name="title_activity_edit_tour_item_list">EditTourItemListActivity</string>
+	<string name="title_activity_edit_tour">EditTourActivity</string>
+	<string name="title_activity_follow_tour">FollowTourActivity</string>
+</resources>
