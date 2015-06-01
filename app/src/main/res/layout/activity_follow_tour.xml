@@ -16,11 +16,13 @@
 		android:layout_height="wrap_content"
 		android:id="@+id/current_location"/>
 
+	<!--
 	<Button
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:text="Find closest tour item"
 		android:id="@+id/find_closest_tour_item" />
+		-->
 
 	<TextView
 		android:text="Closest tour item: "

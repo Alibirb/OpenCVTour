@@ -6,8 +6,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,15 +16,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class FollowTourActivity extends ActionBarActivity implements View.OnClickListener, LocationService.LocationUpdateListener {
+public class FollowTourActivity extends AppCompatActivity implements View.OnClickListener, LocationService.LocationUpdateListener {
 
+	private static final String TAG = "FollowTourActivity";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_follow_tour);
 
-		findViewById(R.id.find_closest_tour_item).setOnClickListener(this);
+		//findViewById(R.id.find_closest_tour_item).setOnClickListener(this);
 
 		doBindService();
 
@@ -56,9 +57,9 @@ public class FollowTourActivity extends ActionBarActivity implements View.OnClic
 	public void onClick(View v) {
 		switch(v.getId())
 		{
-			case R.id.find_closest_tour_item:
+			/*case R.id.find_closest_tour_item:
 				updateDisplay(mBoundService.getCurrentLocation());
-				break;
+				break;*/
 		}
 	}
 
@@ -76,9 +77,6 @@ public class FollowTourActivity extends ActionBarActivity implements View.OnClic
 			// cast its IBinder to a concrete class and directly access it.
 			mBoundService = ((LocationService.LocationServiceBinder)service).getService();
 			mBoundService.addListener(_this);
-
-			// Tell the user about this for our demo.
-			//Toast.makeText(Binding.this, R.string.local_service_connected,Toast.LENGTH_SHORT).show();
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -87,7 +85,6 @@ public class FollowTourActivity extends ActionBarActivity implements View.OnClic
 			// Because it is running in our same process, we should never
 			// see this happen.
 			mBoundService = null;
-			//Toast.makeText(Binding.this, R.string.local_service_disconnected, Toast.LENGTH_SHORT).show();
 		}
 	};
 
@@ -125,8 +122,8 @@ public class FollowTourActivity extends ActionBarActivity implements View.OnClic
 
 	private void updateDisplay(Location current_location) {
 		if (current_location == null) {
-			Log.e("taggy-thingy", "got null current location");
-			Toast.makeText(this, "Could not find location. Try again in a little bit", Toast.LENGTH_SHORT).show();
+			Log.e(TAG, "got null current location");
+			Toast.makeText(this, "Couldn't determine location. Ensure location is enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
 			return;
 		}
 

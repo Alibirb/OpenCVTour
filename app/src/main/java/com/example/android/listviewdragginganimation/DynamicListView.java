@@ -54,7 +54,7 @@ import java.util.ArrayList;
 import alicrow.opencvtour.EditTourItemListActivityFragment;
 
 /**
- * The dynamic listview is an extension of listview that supports cell dragging
+ * The dynamic ListView is an extension of ListView that supports cell dragging
  * and swapping.
  *
  * This layout is in charge of positioning the hover cell in the correct location
@@ -62,17 +62,17 @@ import alicrow.opencvtour.EditTourItemListActivityFragment;
  * hover cell to determine when two cells should be swapped. If two cells should
  * be swapped, all the corresponding data set and layout changes are handled here.
  *
- * If no cell is selected, all the touch events are passed down to the listview
- * and behave normally. If one of the items in the listview experiences a
+ * If no cell is selected, all the touch events are passed down to the ListView
+ * and behave normally. If one of the items in the ListView experiences a
  * long press event, the contents of its current visible state are captured as
  * a bitmap and its visibility is set to INVISIBLE. A hover cell is then created and
- * added to this layout as an overlaying BitmapDrawable above the listview. Once the
+ * added to this layout as an overlaying BitmapDrawable above the ListView. Once the
  * hover cell is translated some distance to signify an item swap, a data set change
  * accompanied by animation takes place. When the user releases the hover cell,
- * it animates into its corresponding position in the listview.
+ * it animates into its corresponding position in the ListView.
  *
- * When the hover cell is either above or below the bounds of the listview, this
- * listview also scrolls on its own so as to reveal additional content.
+ * When the hover cell is either above or below the bounds of the ListView, this
+ * ListView also scrolls on its own so as to reveal additional content.
  */
 public class DynamicListView extends ListView {
 
@@ -129,7 +129,7 @@ public class DynamicListView extends ListView {
     }
 
     /**
-     * Listens for long clicks on any items in the listview. When a cell has
+     * Listens for long clicks on any items in the ListView. When a cell has
      * been selected, the hover cell is created and set up.
      */
     private AdapterView.OnItemLongClickListener mOnItemLongClickListener =
@@ -244,7 +244,7 @@ public class DynamicListView extends ListView {
     /**
      *  dispatchDraw gets invoked when all the child views are about to be drawn.
      *  By overriding this method, the hover cell (BitmapDrawable) can be drawn
-     *  over the listview's items whenever the listview is redrawn.
+     *  over the ListView's items whenever the ListView is redrawn.
      */
     @Override
     protected void dispatchDraw(Canvas canvas) {
@@ -297,7 +297,7 @@ public class DynamicListView extends ListView {
                 /* If a multitouch event took place and the original touch dictating
                  * the movement of the hover cell has ended, then the dragging event
                  * ends and the hover cell is animated to its corresponding position
-                 * in the listview. */
+                 * in the ListView. */
                 pointerIndex = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >>
                         MotionEvent.ACTION_POINTER_INDEX_SHIFT;
                 final int pointerId = event.getPointerId(pointerIndex);
@@ -400,7 +400,7 @@ public class DynamicListView extends ListView {
             mIsMobileScrolling = false;
             mActivePointerId = INVALID_POINTER_ID;
 
-            // If the autoscroller has not completed scrolling, we need to wait for it to
+            // If the auto-scroller has not completed scrolling, we need to wait for it to
             // finish in order to determine the final location of where the hover cell
             // should be animated to.
             if (mScrollState != OnScrollListener.SCROLL_STATE_IDLE) {
@@ -478,8 +478,8 @@ public class DynamicListView extends ListView {
     };
 
     /**
-     *  Determines whether this listview is in a scrolling state invoked
-     *  by the fact that the hover cell is out of the bounds of the listview;
+     *  Determines whether this ListView is in a scrolling state invoked
+     *  by the fact that the hover cell is out of the bounds of the ListView;
      */
     private void handleMobileCellScroll() {
         mIsMobileScrolling = handleMobileCellScroll(mHoverCellCurrentBounds);
@@ -487,7 +487,7 @@ public class DynamicListView extends ListView {
 
     /**
      * This method is in charge of determining if the hover cell is above
-     * or below the bounds of the listview. If so, the listview does an appropriate
+     * or below the bounds of the ListView. If so, the ListView does an appropriate
      * upward or downward smooth scroll so as to reveal new items.
      */
     public boolean handleMobileCellScroll(Rect r) {
@@ -512,10 +512,10 @@ public class DynamicListView extends ListView {
     }
 
     /**
-     * This scroll listener is added to the listview in order to handle cell swapping
-     * when the cell is either at the top or bottom edge of the listview. If the hover
-     * cell is at either edge of the listview, the listview will begin scrolling. As
-     * scrolling takes place, the listview continuously checks if new cells became visible
+     * This scroll listener is added to the ListView in order to handle cell swapping
+     * when the cell is either at the top or bottom edge of the ListView. If the hover
+     * cell is at either edge of the ListView, the ListView will begin scrolling. As
+     * scrolling takes place, the ListView continuously checks if new cells became visible
      * and determines whether they are potential candidates for a cell swap.
      */
     private AbsListView.OnScrollListener mScrollListener = new AbsListView.OnScrollListener () {
@@ -551,11 +551,11 @@ public class DynamicListView extends ListView {
         }
 
         /**
-         * This method is in charge of invoking 1 of 2 actions. Firstly, if the listview
+         * This method is in charge of invoking 1 of 2 actions. Firstly, if the ListView
          * is in a state of scrolling invoked by the hover cell being outside the bounds
-         * of the listview, then this scrolling event is continued. Secondly, if the hover
+         * of the ListView, then this scrolling event is continued. Secondly, if the hover
          * cell has already been released, this invokes the animation for the hover cell
-         * to return to its correct position after the listview has entered an idle scroll
+         * to return to its correct position after the ListView has entered an idle scroll
          * state.
          */
         private void isScrollCompleted() {
@@ -569,7 +569,7 @@ public class DynamicListView extends ListView {
         }
 
         /**
-         * Determines if the listview scrolled up enough to reveal a new cell at the
+         * Determines if the ListView scrolled up enough to reveal a new cell at the
          * top of the list. If so, then the appropriate parameters are updated.
          */
         public void checkAndHandleFirstVisibleCellChange() {
@@ -582,7 +582,7 @@ public class DynamicListView extends ListView {
         }
 
         /**
-         * Determines if the listview scrolled down enough to reveal a new cell at the
+         * Determines if the ListView scrolled down enough to reveal a new cell at the
          * bottom of the list. If so, then the appropriate parameters are updated.
          */
         public void checkAndHandleLastVisibleCellChange() {

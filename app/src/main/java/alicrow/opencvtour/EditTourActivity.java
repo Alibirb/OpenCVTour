@@ -1,12 +1,12 @@
 package alicrow.opencvtour;
 
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class EditTourActivity extends ActionBarActivity {
+public class EditTourActivity extends AppCompatActivity {
 
 	private Tour _tour;
 

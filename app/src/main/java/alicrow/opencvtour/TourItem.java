@@ -2,7 +2,6 @@ package alicrow.opencvtour;
 
 import android.graphics.Bitmap;
 import android.location.Location;
-import android.net.Uri;
 
 import java.io.File;
 import java.util.HashMap;
@@ -52,14 +51,14 @@ public class TourItem
 	 * @return
 	 */
 	public Map<String,Object> saveToMap() {
-		Map<String, Object> data = new HashMap<String, Object>();
+		Map<String, Object> data = new HashMap<>();
 		data.put("name", _name);
 		data.put("description", _description);
 		/// TODO: image file, thumbnail, et cetera.
 
 
 		/// Location contains a bunch of information we're not interested in (e.g. timestamp, speed), so we're just going to export the information that's actually useful to us.
-		Map<String, Object> gps_data = new HashMap<String, Object>();
+		Map<String, Object> gps_data = new HashMap<>();
 		if(_location.hasAccuracy())
 			gps_data.put("accuracy", _location.getAccuracy());
 		if(_location.hasAltitude())

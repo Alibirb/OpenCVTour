@@ -8,11 +8,10 @@ import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,7 +28,9 @@ import java.util.Date;
 /*
  * Activity to edit an item in a tour.
  */
-public class EditTourItemActivity extends ActionBarActivity implements View.OnClickListener {
+public class EditTourItemActivity extends AppCompatActivity implements View.OnClickListener {
+
+	private static final String TAG = "EditTourItemActivity";
 
 	public static int EDIT_TOUR_ITEM_REQUEST = 0x0002;
 	public static int REQUEST_IMAGE_CAPTURE = 1;
@@ -53,9 +54,6 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 			// service that we know is running in our own process, we can
 			// cast its IBinder to a concrete class and directly access it.
 			mBoundService = ((LocationService.LocationServiceBinder)service).getService();
-
-			// Tell the user about this for our demo.
-			//Toast.makeText(Binding.this, R.string.local_service_connected,Toast.LENGTH_SHORT).show();
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -64,7 +62,6 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 			// Because it is running in our same process, we should never
 			// see this happen.
 			mBoundService = null;
-			//Toast.makeText(Binding.this, R.string.local_service_disconnected, Toast.LENGTH_SHORT).show();
 		}
 	};
 
@@ -94,8 +91,6 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 	}
 
 
-
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -112,7 +107,7 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 		/// TODO: handle audio and image
 
 		if(_tour_item.getLocation() != null) {
-			Log.i("taggy-thingy", "loading GPS coordinates...");
+			Log.i(TAG, "loading GPS coordinates...");
 			((TextView) findViewById(R.id.edit_tour_item_latitude)).setText(Location.convert(_tour_item.getLocation().getLatitude(), Location.FORMAT_DEGREES));
 			((TextView) findViewById(R.id.edit_tour_item_longitude)).setText(Location.convert(_tour_item.getLocation().getLongitude(), Location.FORMAT_DEGREES));
 		}
@@ -120,13 +115,9 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 		findViewById(R.id.image_picker).setOnClickListener(this);
 		findViewById(R.id.get_current_gps_location).setOnClickListener(this);
 
-
 		doBindService();
 
 	}
-
-
-
 
 
 
@@ -159,11 +150,6 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 		_tour_item.setDescription( ((EditText) findViewById(R.id.edit_tour_item_description)).getText().toString());
 		/// TODO: handle audio and image
 
-		//Location location = new Location("user");
-		//location.setLatitude(Location.convert( ((EditText) findViewById(R.id.edit_tour_item_latitude)).getText().toString()));
-		//location.setLongitude(Location.convert(((EditText) findViewById(R.id.edit_tour_item_longitude)).getText().toString()));
-
-
 		/// finish this Activity
 		Bundle data = new Bundle();
 		data.putBoolean("item_edited", true);
@@ -193,23 +179,23 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 						takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(_photoFile));
 						startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
 					}
-
 				}
-
 				break;
 
 			case R.id.get_current_gps_location:
 			{
 				Location location = mBoundService.getCurrentLocation();
-				if (location == null)
-					Log.e("taggy-thingy", "got null current location");
+				if (location == null) {
+					Log.e(TAG, "got null current location");
+					Toast.makeText(this, "Could not determine location. Make sure you have location enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
+				}
+				else {
+					Toast.makeText(this, location.toString(), Toast.LENGTH_SHORT).show();
+					_tour_item.setLocation(location);
 
-				Toast.makeText(this, location.toString(), Toast.LENGTH_SHORT).show();
-				_tour_item.setLocation(location);
-
-				((TextView) findViewById(R.id.edit_tour_item_latitude)).setText(Location.convert(_tour_item.getLocation().getLatitude(), Location.FORMAT_DEGREES));
-				((TextView) findViewById(R.id.edit_tour_item_longitude)).setText(Location.convert(_tour_item.getLocation().getLongitude(), Location.FORMAT_DEGREES));
-
+					((TextView) findViewById(R.id.edit_tour_item_latitude)).setText(Location.convert(_tour_item.getLocation().getLatitude(), Location.FORMAT_DEGREES));
+					((TextView) findViewById(R.id.edit_tour_item_longitude)).setText(Location.convert(_tour_item.getLocation().getLongitude(), Location.FORMAT_DEGREES));
+				}
 				break;
 			}
 		}
@@ -221,17 +207,13 @@ public class EditTourItemActivity extends ActionBarActivity implements View.OnCl
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String imageFileName = "JPEG_" + timeStamp + "_";
 		//File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-		File image = File.createTempFile(
+		return File.createTempFile(
 				imageFileName,  /* prefix */
 				".jpg",         /* suffix */
 				//storageDir      /* directory */
 				//Environment.getExternalStorageDirectory()
 				getFilesDir()
 		);
-
-		// Save a file: path for use with ACTION_VIEW intents
-		//mCurrentPhotoPath = "file:" + image.getAbsolutePath();
-		return image;
 	}
 
 

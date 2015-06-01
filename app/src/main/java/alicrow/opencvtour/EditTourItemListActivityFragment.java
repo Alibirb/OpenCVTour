@@ -1,20 +1,15 @@
 package alicrow.opencvtour;
 
 import android.app.Activity;
-import android.app.ListFragment;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -36,9 +31,6 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 	private AdapterView.OnItemClickListener messageClickedHandler = new AdapterView.OnItemClickListener() {
 		public void onItemClick(AdapterView parent, View v, int position, long id)
 		{
-			// Display a messagebox.
-			//Toast.makeText(_context, "You've got an event", Toast.LENGTH_SHORT).show();
-
 			// Switch to TourItem-editing mode.
 			Intent intent = new Intent(getActivity(), EditTourItemActivity.class);
 			Bundle bundle = new Bundle();
@@ -62,7 +54,6 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 		{
 			final int position = _list_view.getPositionForView(v);
 			if (position != ListView.INVALID_POSITION) {
-				//showMessage(getString(R.string.you_want_to_buy_format, CHEESES[position]));
 				/// Delete that TourItem
 				((TourItemArrayAdapter) _list_view.getAdapter()).remove(((TourItemArrayAdapter) _list_view.getAdapter()).getItem(position));
 			}
@@ -98,7 +89,7 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 			/// Todo: image and audio support
 
 			/// Set up event listeners for the item's buttons
-			((Button) row_view.findViewById(R.id.delete_tour_item)).setOnClickListener(deleteButtonClickedListener);
+			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(deleteButtonClickedListener);
 
 
 			return row_view;
@@ -120,17 +111,6 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 
 
 
-/*
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		//setContentView(R.layout.activity_main);
-
-
-
-	}*/
-
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -138,7 +118,7 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 		View v = inflater.inflate(R.layout.fragment_edit_tour_item_list,
 				container, false);
 
-		((Button) v.findViewById(R.id.add_tour_item)).setOnClickListener(this);
+		v.findViewById(R.id.add_tour_item).setOnClickListener(this);
 
 		return v;
 	}
@@ -199,19 +179,6 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 			((TourItemArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
 		}
 	}
-
-
-	@Override
-	public void onPause() {
-		super.onPause();
-		/// TODO
-	}
-
-
-	///TODO: onSaveInstanceState
-
-
-
 
 
 }

@@ -9,10 +9,8 @@
 		android:layout_width="wrap_content"
 		android:layout_height="match_parent"
 		android:id="@+id/delete_tour_item"
-	    android:onClick="delete_tour_item"
 		android:text="-"
 		android:textSize="28sp"
-		android:textAlignment="center"
 		android:textStyle="bold"
 		android:minWidth="1dp"/>
 
@@ -23,7 +21,7 @@
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentTop="true"
 		android:layout_marginRight="6dip"
-		android:contentDescription="TODO"
+		android:contentDescription="tour item thumbnail"
 		android:layout_toRightOf="@id/delete_tour_item"
 		android:src="@drawable/default_thumbnail"/>
 
