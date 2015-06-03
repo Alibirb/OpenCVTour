@@ -13,11 +13,11 @@ import android.widget.TextView;
 /**
  * Fragment listing options to edit a Tour.
  */
-public class EditTourActivityFragment extends Fragment implements View.OnClickListener {
+public class EditTourFragment extends Fragment implements View.OnClickListener {
 
 	private static final String TAG = "EditTourFragment";
 
-	public EditTourActivityFragment() {
+	public EditTourFragment() {
 	}
 
 	@Override
@@ -28,6 +28,7 @@ public class EditTourActivityFragment extends Fragment implements View.OnClickLi
 		v.findViewById(R.id.enable_gps).setOnClickListener(this);
 		v.findViewById(R.id.save_tour).setOnClickListener(this);
 		v.findViewById(R.id.load_tour).setOnClickListener(this);
+		v.findViewById(R.id.follow_tour).setOnClickListener(this);
 
 		((CheckBox) v.findViewById(R.id.enable_gps)).setChecked(Tour.getCurrentTour().getGpsEnabled());
 		((TextView) v.findViewById(R.id.tour_name)).setText(Tour.getCurrentTour().getName());
@@ -55,6 +56,10 @@ public class EditTourActivityFragment extends Fragment implements View.OnClickLi
 			}
 			case R.id.load_tour: {
 				/// FIXME: this button no longer does anything (since all available Tours are loaded at the beginning of the App). Should probably be replaced with "drop changes and reload" or something.
+				break;
+			}
+			case R.id.follow_tour: {
+				startActivity(new Intent(getActivity(), FollowTourActivity.class));
 				break;
 			}
 		}

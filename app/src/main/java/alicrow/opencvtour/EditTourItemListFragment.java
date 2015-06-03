@@ -21,46 +21,26 @@ import java.util.List;
 /**
  * Fragment to display the list of TourItems in a Tour.
  */
-public class EditTourItemListActivityFragment extends Fragment implements View.OnClickListener {
+public class EditTourItemListFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener {
 
 	private ListView _list_view;
 
 	//private ArrayList<TourItem> _tour_items;
 	private Tour _tour;
 
-	/// Create a message handling object as an anonymous class.
-	private AdapterView.OnItemClickListener messageClickedHandler = new AdapterView.OnItemClickListener() {
-		public void onItemClick(AdapterView parent, View v, int position, long id)
-		{
-			// Switch to TourItem-editing mode.
-			Intent intent = new Intent(getActivity(), EditTourItemActivity.class);
-			Bundle bundle = new Bundle();
-			bundle.putShort("position", (short) position);
-
-			//Toast.makeText(MainActivity.this, Short.toString(bundle.getShort("position")), Toast.LENGTH_SHORT).show();
-
-			intent.putExtras(bundle);
-			startActivityForResult(intent, EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST);
-
-			/*
-			TODO: see http://developer.android.com/guide/components/fragments.html and use fragments that way.
-			 */
-		}
-	};
+	private EditTourItemListFragment _listener = this;
 
 
-	private View.OnClickListener deleteButtonClickedListener = new View.OnClickListener() {
-		@Override
-		public void onClick(View v)
-		{
-			final int position = _list_view.getPositionForView(v);
-			if (position != ListView.INVALID_POSITION) {
-				/// Delete that TourItem
-				((TourItemArrayAdapter) _list_view.getAdapter()).remove(((TourItemArrayAdapter) _list_view.getAdapter()).getItem(position));
-			}
+	public void onItemClick(AdapterView parent, View v, int position, long id) {
+		// Switch to TourItem-editing mode.
+		Intent intent = new Intent(getActivity(), EditTourItemActivity.class);
+		Bundle bundle = new Bundle();
+		bundle.putShort("position", (short) position);
 
-		}
-	};
+		intent.putExtras(bundle);
+		startActivityForResult(intent, EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST);
+	}
+
 
 
 	public class TourItemArrayAdapter extends ArrayAdapter<TourItem>
@@ -87,12 +67,12 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 
 			((TextView) row_view.findViewById(R.id.tour_item_name)).setText(item.getName());
 			((TextView) row_view.findViewById(R.id.tour_item_description)).setText(item.getDescription());
-			if(item.getImageFilename() != null)
+			if(item.getImageFilename() != null && !item.getImageFilename().equals(""))
 				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageBitmap(Utilities.decodeSampledBitmap(item.getImageFilename(), 64, 64));
 			/// Todo: audio support
 
 			/// Set up event listeners for the item's buttons
-			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(deleteButtonClickedListener);
+			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(_listener);
 
 			return row_view;
 		}
@@ -138,7 +118,7 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 		TourItemArrayAdapter adapter = new TourItemArrayAdapter(getActivity(), _tour_items);
 		_list_view.setAdapter(adapter);
 
-		_list_view.setOnItemClickListener(messageClickedHandler);
+		_list_view.setOnItemClickListener(this);
 	}
 
 
@@ -147,16 +127,22 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 	{
 		switch(v.getId()) {
 			case R.id.add_tour_item:
-				addNewTourItem(v);
+				addNewTourItem();
 				break;
+			case R.id.delete_tour_item: {
+				final int position = _list_view.getPositionForView(v);
+				if (position != ListView.INVALID_POSITION) {
+					/// Delete that TourItem
+					((TourItemArrayAdapter) _list_view.getAdapter()).remove(((TourItemArrayAdapter) _list_view.getAdapter()).getItem(position));
+				}
+			}
 		}
 	}
 
 	/**
 	 * Adds a new TourItem, and launches EditTourItemActivity for it.
-	 * @param view
 	 */
-	public void addNewTourItem(View view)
+	public void addNewTourItem()
 	{
 		/// Add empty TourItem to the Tour
 		_tour.getTourItems().add(new TourItem());

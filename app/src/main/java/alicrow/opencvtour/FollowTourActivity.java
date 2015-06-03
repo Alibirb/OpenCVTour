@@ -67,7 +67,6 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 
 	private LocationService mBoundService;
-	private FollowTourActivity _this = this;
 
 	private ServiceConnection mConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service) {

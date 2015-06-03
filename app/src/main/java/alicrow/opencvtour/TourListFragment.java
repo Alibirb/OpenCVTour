@@ -17,13 +17,13 @@ import java.util.ArrayList;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class TourListActivityFragment extends Fragment implements AdapterView.OnItemClickListener, View.OnClickListener {
+public class TourListFragment extends Fragment implements AdapterView.OnItemClickListener, View.OnClickListener {
 
-	static String TAG = "TourListActivityFragment";
+	static String TAG = "TourListFragment";
 
 	ListView _list_view;
 
-	public TourListActivityFragment() {
+	public TourListFragment() {
 	}
 
 	@Override
@@ -53,23 +53,28 @@ public class TourListActivityFragment extends Fragment implements AdapterView.On
 	{
 		Log.i(TAG, "position " + position);
 		Tour.setSelectedTour(Tour.getTours().get(position));
-
-		Intent intent = new Intent(getActivity(), MainActivity.class);
-		Bundle bundle = new Bundle();
-		bundle.putShort("position", (short) position);
-
-		intent.putExtras(bundle);
-		startActivity(intent);
+		startActivity(new Intent(getActivity(), EditTourActivity.class));
 	}
 
 	@Override
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.add_tour:
-				Tour.addNewTour();
-				((ArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
+				Tour new_tour = Tour.addNewTour();
+				/// Open the new Tour for editing
+				Tour.setSelectedTour(new_tour);
+				startActivityForResult(new Intent(getActivity(), EditTourActivity.class), EditTourActivity.EDIT_TOUR_REQUEST);
 				break;
 			/// TODO: delete tour button
+		}
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+		/// Update our ListView
+		if(requestCode == EditTourActivity.EDIT_TOUR_REQUEST) {
+			((ArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
 		}
 	}
 

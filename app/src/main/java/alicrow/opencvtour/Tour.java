@@ -54,7 +54,10 @@ public class Tour
 		String state = Environment.getExternalStorageState();
 		Log.i(TAG, state);
 
-		_tour_directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);   /// FIXME: "Pictures" isn't a good place for this, but there's no better option here, except DIRECTORY_DOCUMENTS, which is only available starting in Android 4.4
+		_tour_directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour");   /// FIXME: "Pictures" isn't a good place for this, but there's no better option here, except DIRECTORY_DOCUMENTS, which is only available starting in Android 4.4
+		if(!_tour_directory.exists())
+			_tour_directory.mkdirs();
+
 		Log.i(TAG, "got public directory");
 
 		for(File file : _tour_directory.listFiles()) {
@@ -65,8 +68,10 @@ public class Tour
 		}
 	}
 
-	public static void addNewTour() {
-		_tours.add(new Tour());
+	public static Tour addNewTour() {
+		Tour tour = new Tour();
+		_tours.add(tour);
+		return tour;
 	}
 
 
