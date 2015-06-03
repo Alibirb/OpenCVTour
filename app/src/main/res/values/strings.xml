@@ -6,4 +6,6 @@
 	<string name="title_activity_edit_tour_item_list">EditTourItemListActivity</string>
 	<string name="title_activity_edit_tour">EditTourActivity</string>
 	<string name="title_activity_follow_tour">FollowTourActivity</string>
+	<string name="title_activity_tour_list">TourListActivity</string>
+	<string name="done">Done</string>
 </resources>

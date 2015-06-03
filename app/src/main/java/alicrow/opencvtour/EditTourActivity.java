@@ -1,12 +1,12 @@
 package alicrow.opencvtour;
 
+import android.app.Activity;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class EditTourActivity extends AppCompatActivity {
+public class EditTourActivity extends Activity {
 
 	private Tour _tour;
 

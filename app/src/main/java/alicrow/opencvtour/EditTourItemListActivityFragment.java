@@ -3,13 +3,14 @@ package alicrow.opencvtour;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.app.Fragment;
+import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -86,11 +87,12 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 
 			((TextView) row_view.findViewById(R.id.tour_item_name)).setText(item.getName());
 			((TextView) row_view.findViewById(R.id.tour_item_description)).setText(item.getDescription());
-			/// Todo: image and audio support
+			if(item.getImageFilename() != null)
+				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageBitmap(Utilities.decodeSampledBitmap(item.getImageFilename(), 64, 64));
+			/// Todo: audio support
 
 			/// Set up event listeners for the item's buttons
 			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(deleteButtonClickedListener);
-
 
 			return row_view;
 		}
@@ -113,10 +115,8 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-	                         Bundle savedInstanceState) {
-		View v = inflater.inflate(R.layout.fragment_edit_tour_item_list,
-				container, false);
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View v = inflater.inflate(R.layout.fragment_edit_tour_item_list, container, false);
 
 		v.findViewById(R.id.add_tour_item).setOnClickListener(this);
 
@@ -174,8 +174,7 @@ public class EditTourItemListActivityFragment extends Fragment implements View.O
 	public void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
 		/// Update our ListView if the EditTourItemActivity finished successfully.
-		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST)
-		{
+		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST) {
 			((TourItemArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
 		}
 	}

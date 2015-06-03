@@ -1,9 +1,8 @@
 package alicrow.opencvtour;
 
-import android.graphics.Bitmap;
 import android.location.Location;
+import android.util.Log;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,12 +13,12 @@ import java.util.Map;
  */
 public class TourItem
 {
+	static String TAG = "TourItem";
+
 	String _name;
 	String _description;
-	File _image_file;       /// FIXME: I don't know if it's working.
-	Bitmap _thumbnail;     /// FIXME: not working.
+	String _image_filename;
 	/// TODO: audio file
-	/// TODO: GPS coordinates
 	Location _location;
 
 
@@ -30,18 +29,13 @@ public class TourItem
 	{
 		_name = "";
 		_description = "";
-		_unique_id = _next_id;
-		++_next_id;
-	}
-	public TourItem(String name, String description)
-	{
-		_name = name;
-		_description = description;
+		_image_filename = "";
 		_unique_id = _next_id;
 		++_next_id;
 	}
 	public TourItem(Map<String,Object> data) {
 		_unique_id = _next_id;
+		_image_filename = "";
 		++_next_id;
 		loadFromMap(data);
 	}
@@ -54,8 +48,12 @@ public class TourItem
 		Map<String, Object> data = new HashMap<>();
 		data.put("name", _name);
 		data.put("description", _description);
-		/// TODO: image file, thumbnail, et cetera.
+		Log.i(TAG, "filename is: " + _image_filename);
+		if(_image_filename == null)
+			Log.e(TAG, "_image_filename is null.");
 
+		if(!_image_filename.equals("") && !_image_filename.equals("null"))
+			data.put("image", _image_filename);
 
 		/// Location contains a bunch of information we're not interested in (e.g. timestamp, speed), so we're just going to export the information that's actually useful to us.
 		Map<String, Object> gps_data = new HashMap<>();
@@ -74,22 +72,15 @@ public class TourItem
 	public void loadFromMap(Map<String,Object> data) {
 		setName((String) data.get("name"));
 		setDescription((String) data.get("description"));
+		if(data.containsKey("image") && data.get("image") != null) {
+			setImage((String) data.get("image"));
+		}else
+			_image_filename = "";
 
-		if(data.containsKey("location")) {
+		if(data.containsKey("location") && data.get("location") != null) {
 			Map<String, Object> gps_data = (Map<String, Object>) data.get("location");
 
 			setLocation(gps_data);
-
-			/*_location = new Location("saved");
-			if(gps_data.containsKey("accuracy"))
-				_location.setAccuracy((Float) gps_data.get("accuracy"));
-			if(gps_data.containsKey("altitude"))
-				_location.setAltitude((Double) gps_data.get("altitude"));
-			if(gps_data.containsKey("latitude"))
-				_location.setLatitude((Double) gps_data.get("latitude"));
-			if(gps_data.containsKey("longitude"))
-				_location.setLongitude((Double) gps_data.get("longitude"));
-				*/
 		}
 
 	}
@@ -113,18 +104,13 @@ public class TourItem
 		return _unique_id;
 	}
 
-	public Bitmap getThumbnail() {
-		return _thumbnail;
-	}
-	public void setThumbnail(Bitmap thumb) {
-		_thumbnail = thumb;
-	}
 
-	public File getImageFile() {
-		return _image_file;
+	public String getImageFilename() {
+		return _image_filename;
 	}
-	public void setImageFile(File image_file) {
-		_image_file = image_file;
+	public void setImage(String filename) {
+		Log.i(TAG, "setting _image_filename to '" + filename + "'");
+		_image_filename = filename;
 	}
 
 	public Location getLocation() {

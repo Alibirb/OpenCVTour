@@ -8,27 +8,33 @@ import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.app.ActionBar;
+import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /*
  * Activity to edit an item in a tour.
  */
-public class EditTourItemActivity extends AppCompatActivity implements View.OnClickListener {
+public class EditTourItemActivity extends Activity implements View.OnClickListener {
 
 	private static final String TAG = "EditTourItemActivity";
 
@@ -94,6 +100,17 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		/// custom action bar
+		final LayoutInflater inflater = getLayoutInflater();
+		final View actionBarView = inflater.inflate(R.layout.actionbar_custom_view_done, null);
+
+		final ActionBar actionBar = getActionBar();
+		actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM, ActionBar.DISPLAY_SHOW_CUSTOM | ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_SHOW_TITLE);
+		actionBar.setCustomView(actionBarView, new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+		actionBarView.findViewById(R.id.actionbar_done).setOnClickListener(this);
+
 		setContentView(R.layout.activity_edit_tour_item);
 
 		/// Find the TourItem we're editing, and display its current values.
@@ -104,18 +121,28 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 
 		((EditText) findViewById(R.id.edit_tour_item_name)).setText(_tour_item.getName());
 		((EditText) findViewById(R.id.edit_tour_item_description)).setText(_tour_item.getDescription());
-		/// TODO: handle audio and image
+		/// TODO: handle audio
+		if(!_tour_item.getImageFilename().equals("")) {
+			/// display the image
+			Bitmap thumbnail = Utilities.decodeSampledBitmap(_tour_item.getImageFilename(), 128, 128);
+			((ImageView) findViewById(R.id.tour_item_thumbnail)).setImageBitmap(thumbnail);
+		}
 
 		if(_tour_item.getLocation() != null) {
 			Log.i(TAG, "loading GPS coordinates...");
-			((TextView) findViewById(R.id.edit_tour_item_latitude)).setText(Location.convert(_tour_item.getLocation().getLatitude(), Location.FORMAT_DEGREES));
-			((TextView) findViewById(R.id.edit_tour_item_longitude)).setText(Location.convert(_tour_item.getLocation().getLongitude(), Location.FORMAT_DEGREES));
+			((TextView) findViewById(R.id.tour_item_location)).setText("location: " + _tour_item.getLocation().getLatitude() + ", " + _tour_item.getLocation().getLongitude());
 		}
 
 		findViewById(R.id.image_picker).setOnClickListener(this);
 		findViewById(R.id.get_current_gps_location).setOnClickListener(this);
 
 		doBindService();
+
+
+		if(savedInstanceState != null && savedInstanceState.containsKey("_photoFile_uri")) {
+			Log.i(TAG, "attempting to create _photoFile from URI in savedInstanceState");
+			_photoFile = new File(URI.create(savedInstanceState.getString("_photoFile_uri")));
+		}
 
 	}
 
@@ -143,7 +170,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 		return super.onOptionsItemSelected(item);
 	}
 
-	public void applyChanges(View view)
+	public void applyChanges()
 	{
 		/// Apply changes and return to previous Activity.
 		_tour_item.setName(((EditText) findViewById(R.id.edit_tour_item_name)).getText().toString());
@@ -173,11 +200,14 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 					} catch (IOException ex) {
 						// Error occurred while creating the File
 						Toast.makeText(this, ex.toString(), Toast.LENGTH_SHORT).show();
+						Log.e(TAG, ex.toString());
 					}
 					// Continue only if the File was successfully created
 					if (_photoFile != null) {
 						takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(_photoFile));
 						startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+					} else {
+						Log.e(TAG, "_photoFile is null");
 					}
 				}
 				break;
@@ -192,12 +222,12 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 				else {
 					Toast.makeText(this, location.toString(), Toast.LENGTH_SHORT).show();
 					_tour_item.setLocation(location);
-
-					((TextView) findViewById(R.id.edit_tour_item_latitude)).setText(Location.convert(_tour_item.getLocation().getLatitude(), Location.FORMAT_DEGREES));
-					((TextView) findViewById(R.id.edit_tour_item_longitude)).setText(Location.convert(_tour_item.getLocation().getLongitude(), Location.FORMAT_DEGREES));
+					((TextView) findViewById(R.id.tour_item_location)).setText("location: " + _tour_item.getLocation().getLatitude() + ", " + _tour_item.getLocation().getLongitude());
 				}
 				break;
 			}
+			case R.id.actionbar_done:
+				applyChanges();
 		}
 	}
 
@@ -211,8 +241,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 				imageFileName,  /* prefix */
 				".jpg",         /* suffix */
 				//storageDir      /* directory */
-				//Environment.getExternalStorageDirectory()
-				getFilesDir()
+				Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
 		);
 	}
 
@@ -222,15 +251,35 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 	{
 		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.REQUEST_IMAGE_CAPTURE)
 		{
-			_tour_item.setImageFile(_photoFile);
+			_tour_item.setImage(_photoFile.toString());
 			if(data != null) {
 				data.getExtras();
 				data.getExtras().get("data");
-				_tour_item.setThumbnail((Bitmap) data.getExtras().get("data"));
+				Log.i(TAG, "got a bitmap from camera");
+				((ImageView) findViewById(R.id.tour_item_thumbnail)).setImageBitmap((Bitmap) data.getExtras().get("data"));
+
 			} else {
-				Toast.makeText(this, "got null data back from camera.",Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, "camera didn't return a thumbnail",Toast.LENGTH_SHORT).show();
+				Log.i(TAG, "camera didn't return a thumbnail");
+				Bitmap thumbnail = Utilities.decodeSampledBitmap(_photoFile.toString(), 128, 128);
+				((ImageView) findViewById(R.id.tour_item_thumbnail)).setImageBitmap(thumbnail);
 			}
+
+			if(_photoFile == null)
+				Log.e(TAG, "_photoFile is null");
+
+			Log.i(TAG, "there should be a picture called " + _photoFile.toURI().toString());
 		}
+	}
+
+	@Override
+	protected void onSaveInstanceState(@NonNull Bundle outState) {
+		super.onSaveInstanceState(outState);
+
+		Log.i(TAG, "onSaveInstanceState called");
+
+		if(_photoFile != null)
+			outState.putString("_photoFile_uri", _photoFile.toURI().toString());
 	}
 
 

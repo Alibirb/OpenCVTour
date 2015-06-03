@@ -2,13 +2,13 @@ package alicrow.opencvtour;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.app.Activity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener
+public class MainActivity extends Activity implements View.OnClickListener
 {
 
 	@Override

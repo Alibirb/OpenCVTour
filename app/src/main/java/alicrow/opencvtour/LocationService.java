@@ -101,7 +101,7 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 
 	@Override
 	public void onLocationChanged(Location location) {
-		Log.i(TAG, "received location update");
+		Log.v(TAG, "received location update");
 		_current_location = location;
 		for(LocationUpdateListener l : _listeners)
 			l.onLocationUpdated(location);
