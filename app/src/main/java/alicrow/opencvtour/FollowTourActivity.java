@@ -135,19 +135,19 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 			findViewById(R.id.closest_tour_item_description).setVisibility(View.VISIBLE);
 
 			Log.i(TAG, "closest item is named " + closest_item.getName());
-			Log.i(TAG, "image filename is '" + closest_item.getImageFilename() + "'");
+			Log.i(TAG, "image filename is '" + closest_item.getMainImageFilename() + "'");
 
 			((TextView) findViewById(R.id.closest_tour_item_name)).setText(closest_item.getName());
 			((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + closest_item.getLocation().getLatitude() + ", " + closest_item.getLocation().getLongitude());
 			((TextView) findViewById(R.id.closest_tour_item_description)).setText(closest_item.getDescription());
-			if(!closest_item.getImageFilename().equals("")) {
+			if(closest_item.hasMainImage()) {
 				/// display a picture of the TourItem, scaled to fit available space
 				findViewById(R.id.closest_tour_item_picture).setVisibility(View.VISIBLE);
-				String filepath = closest_item.getImageFilename();
+				String filepath = closest_item.getMainImageFilename();
 				BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
 				int width = findViewById(R.id.closest_tour_item_picture).getWidth();
 				int height = width * (bounds.outHeight / bounds.outWidth);
-				Bitmap image = Utilities.decodeSampledBitmap(closest_item.getImageFilename(), width, height);
+				Bitmap image = Utilities.decodeSampledBitmap(closest_item.getMainImageFilename(), width, height);
 				((ImageView) findViewById(R.id.closest_tour_item_picture)).setImageBitmap(image);
 			} else {
 				findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);

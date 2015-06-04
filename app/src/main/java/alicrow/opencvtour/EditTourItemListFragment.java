@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.app.Fragment;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -47,6 +49,7 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 	{
 		private final Context _context;
 		private final List<TourItem> _items;
+		private final HashMap<String, Bitmap> _thumbnails = new HashMap<>();
 
 		final int INVALID_ID = -1;
 
@@ -62,13 +65,24 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 		{
 			TourItem item = _items.get(position);
 
-			LayoutInflater inflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			View row_view = inflater.inflate(R.layout.tour_item_line, parent, false);
+			/// Create row_view, or recycle an existing view if possible
+			View row_view;
+			if(convertView == null) {
+				LayoutInflater inflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				row_view = inflater.inflate(R.layout.tour_item_line, parent, false);
+			} else {
+				row_view = convertView;
+			}
 
 			((TextView) row_view.findViewById(R.id.tour_item_name)).setText(item.getName());
 			((TextView) row_view.findViewById(R.id.tour_item_description)).setText(item.getDescription());
-			if(item.getImageFilename() != null && !item.getImageFilename().equals(""))
-				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageBitmap(Utilities.decodeSampledBitmap(item.getImageFilename(), 64, 64));
+
+			if(item.hasMainImage()) {
+				if(!_thumbnails.containsKey(item.getMainImageFilename()))
+					_thumbnails.put(item.getMainImageFilename(), Utilities.decodeSampledBitmap(item.getMainImageFilename(), 64, 64));
+				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageBitmap(_thumbnails.get(item.getMainImageFilename()));
+			} else ((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageResource(R.drawable.default_thumbnail);
+
 			/// Todo: audio support
 
 			/// Set up event listeners for the item's buttons

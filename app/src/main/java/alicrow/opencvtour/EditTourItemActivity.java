@@ -8,19 +8,23 @@ import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.os.Bundle;
 import android.app.ActionBar;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,12 +33,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 /*
  * Activity to edit an item in a tour.
  */
-public class EditTourItemActivity extends Activity implements View.OnClickListener {
+public class EditTourItemActivity extends Activity implements View.OnClickListener, AbsListView.MultiChoiceModeListener {
 
 	private static final String TAG = "EditTourItemActivity";
 
@@ -47,6 +53,9 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 	File _photoFile;
 
+	private GridView _gridview;
+	private Menu _context_menu;
+	private ArrayList<String> _images_selected = new ArrayList<>();
 
 
 
@@ -90,6 +99,128 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		}
 	}
 
+	public class TourItemImageAdapter extends BaseAdapter {
+		private Context _context;
+		private TourItem _item;
+		private HashMap<String, Bitmap> _bitmaps;
+		private final int[] CHECKED_STATE_SET = { android.R.attr.state_checked };
+
+		public TourItemImageAdapter(Context c, TourItem item) {
+			_context = c;
+			_item = item;
+			_bitmaps = new HashMap<>();
+		}
+
+		public int getCount() {
+			return _item.getImageFilenames().size();
+		}
+
+		public Object getItem(int position) {
+			return _item.getImageFilenames().get(position);
+		}
+
+		public long getItemId(int position) {
+			return position;
+		}
+
+		// create a new ImageView for each item referenced by the Adapter
+		public View getView(final int position, View convertView, final ViewGroup parent) {
+			final ImageView image_view;
+			if (convertView == null) {
+				// if it's not recycled, initialize some attributes
+				image_view = new ImageView(_context) {
+					@Override public int[] onCreateDrawableState(int extraSpace) {
+						final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
+						if (((AbsListView)parent).isItemChecked(position)) {
+							mergeDrawableStates(drawableState, CHECKED_STATE_SET);
+						}
+						return drawableState;
+					}
+				};
+				image_view.setBackgroundResource(R.drawable.item_selection_background);
+				image_view.setScaleType(ImageView.ScaleType.CENTER_CROP);
+				image_view.setPadding(8, 8, 8, 8);
+			} else {
+				image_view = (ImageView) convertView;
+			}
+
+			/// check the cache to see if we've already computed this bitmap.
+			if(!_bitmaps.containsKey(_item.getImageFilenames().get(position))) {
+				_bitmaps.put(_item.getImageFilenames().get(position), Utilities.decodeSampledBitmap(_item.getImageFilenames().get(position), 128, 128));
+			}
+			image_view.setImageBitmap(_bitmaps.get(_item.getImageFilenames().get(position)));
+			image_view.setLayoutParams(new GridView.LayoutParams(_bitmaps.get(_item.getImageFilenames().get(position)).getWidth(), _bitmaps.get(_item.getImageFilenames().get(position)).getHeight()));
+
+			return image_view;
+		}
+	}
+
+	@Override
+	public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+		if(checked)
+			_images_selected.add(_tour_item.getImageFilenames().get(position));
+		else
+			_images_selected.remove(_tour_item.getImageFilenames().get(position));
+
+		/// If only a single image is selected, the user can set that as the main image
+		if(_images_selected.size() == 1)
+			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(true);
+		else
+			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(false);
+	}
+
+	@Override
+	public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+		// Respond to clicks on the actions in the CAB
+		switch (item.getItemId()) {
+			case R.id.menu_delete: {
+				/// Remove the selected images from our list.
+				for(String image : _images_selected) {
+					_tour_item.removeImage(image);
+				}
+				mode.finish(); // Action picked, so close the CAB
+				return true;
+			}
+			case R.id.menu_set_as_main_image: {
+				_tour_item.setMainImage(_images_selected.get(0));
+				mode.finish();
+				return true;
+			}
+			default:
+				return false;
+		}
+	}
+
+	@Override
+	public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+		// Inflate the menu for the CAB
+		MenuInflater inflater = mode.getMenuInflater();
+		inflater.inflate(R.menu.context_menu_edit_tour_item, menu);
+		_context_menu = menu;
+		return true;
+	}
+
+	@Override
+	public void onDestroyActionMode(ActionMode mode) {
+		// Make any necessary updates to the activity when the CAB is removed
+		_images_selected.clear();
+	}
+
+	@Override
+	public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+		// Perform updates to the CAB due to an invalidate() request
+		// This gets called when the screen orientation changes, so we can use it to adjust the layout
+
+		_context_menu = menu;   /// Store a reference to the context menu for later usage
+
+		if(_images_selected.size() == 1)
+			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(true);
+		else
+			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(false);
+
+		return false;
+	}
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
@@ -119,14 +250,15 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 		_tour_item = Tour.getCurrentTour().getTourItems().get(_position_in_tour);
 
+		_gridview = (GridView) findViewById(R.id.gridview);
+		_gridview.setAdapter(new TourItemImageAdapter(this, _tour_item));
+		_gridview.setChoiceMode(GridView.CHOICE_MODE_MULTIPLE_MODAL);
+		_gridview.setMultiChoiceModeListener(this);
+		_gridview.setDrawSelectorOnTop(true);
+
 		((EditText) findViewById(R.id.edit_tour_item_name)).setText(_tour_item.getName());
 		((EditText) findViewById(R.id.edit_tour_item_description)).setText(_tour_item.getDescription());
 		/// TODO: handle audio
-		if(!_tour_item.getImageFilename().equals("")) {
-			/// display the image
-			Bitmap thumbnail = Utilities.decodeSampledBitmap(_tour_item.getImageFilename(), 128, 128);
-			((ImageView) findViewById(R.id.tour_item_thumbnail)).setImageBitmap(thumbnail);
-		}
 
 		if(_tour_item.getLocation() != null) {
 			Log.i(TAG, "loading GPS coordinates...");
@@ -139,9 +271,14 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		doBindService();
 
 
-		if(savedInstanceState != null && savedInstanceState.containsKey("_photoFile_uri")) {
-			Log.i(TAG, "attempting to create _photoFile from URI in savedInstanceState");
-			_photoFile = new File(URI.create(savedInstanceState.getString("_photoFile_uri")));
+		if(savedInstanceState != null) {
+			if (savedInstanceState.containsKey("_photoFile_uri")) {
+				Log.i(TAG, "attempting to create _photoFile from URI in savedInstanceState");
+				_photoFile = new File(URI.create(savedInstanceState.getString("_photoFile_uri")));
+			}
+			if(savedInstanceState.containsKey("_images_selected")) {
+				_images_selected = savedInstanceState.getStringArrayList("_images_selected");
+			}
 		}
 
 	}
@@ -236,12 +373,10 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		// Create an image file name
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String imageFileName = "JPEG_" + timeStamp + "_";
-		//File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
 		return File.createTempFile(
 				imageFileName,  /* prefix */
 				".jpg",         /* suffix */
-				//storageDir      /* directory */
-				Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+				Tour.getTourDirectory()      /* directory */
 		);
 	}
 
@@ -251,19 +386,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	{
 		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.REQUEST_IMAGE_CAPTURE)
 		{
-			_tour_item.setImage(_photoFile.toString());
-			if(data != null) {
-				data.getExtras();
-				data.getExtras().get("data");
-				Log.i(TAG, "got a bitmap from camera");
-				((ImageView) findViewById(R.id.tour_item_thumbnail)).setImageBitmap((Bitmap) data.getExtras().get("data"));
-
-			} else {
-				Toast.makeText(this, "camera didn't return a thumbnail",Toast.LENGTH_SHORT).show();
-				Log.i(TAG, "camera didn't return a thumbnail");
-				Bitmap thumbnail = Utilities.decodeSampledBitmap(_photoFile.toString(), 128, 128);
-				((ImageView) findViewById(R.id.tour_item_thumbnail)).setImageBitmap(thumbnail);
-			}
+			_tour_item.addImage(_photoFile.toString());
 
 			if(_photoFile == null)
 				Log.e(TAG, "_photoFile is null");
@@ -280,6 +403,9 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 		if(_photoFile != null)
 			outState.putString("_photoFile_uri", _photoFile.toURI().toString());
+
+		/// save which items are checked.
+		outState.putStringArrayList("_images_selected", _images_selected);
 	}
 
 

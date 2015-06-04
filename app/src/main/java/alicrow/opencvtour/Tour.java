@@ -24,7 +24,7 @@ public class Tour
 	static Tour _currentTour;
 	static ArrayList<Tour> _tours;
 	static String TAG = "Tour";
-	static File _tour_directory;  /// directory to same our Tours in
+	static File _tour_directory;  /// directory to save our Tours in
 
 	private ArrayList<TourItem> _tour_items;
 	private boolean _gps_enabled;
@@ -51,16 +51,7 @@ public class Tour
 	public static void loadTours() {
 		_tours = new ArrayList<>();
 
-		String state = Environment.getExternalStorageState();
-		Log.i(TAG, state);
-
-		_tour_directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour");   /// FIXME: "Pictures" isn't a good place for this, but there's no better option here, except DIRECTORY_DOCUMENTS, which is only available starting in Android 4.4
-		if(!_tour_directory.exists())
-			_tour_directory.mkdirs();
-
-		Log.i(TAG, "got public directory");
-
-		for(File file : _tour_directory.listFiles()) {
+		for(File file : getTourDirectory().listFiles()) {
 			if(file.isFile() && file.getName().endsWith(".yaml")) {
 				Log.i(TAG, "loading tour from file '" + file.toURI());
 				_tours.add(new Tour(file));
@@ -74,6 +65,16 @@ public class Tour
 		return tour;
 	}
 
+	public static File getTourDirectory() {
+		String state = Environment.getExternalStorageState();
+		Log.i(TAG, state);
+
+		_tour_directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour");   /// FIXME: "Pictures" isn't a good place for this, but there's no better option here, except DIRECTORY_DOCUMENTS, which is only available starting in Android 4.4
+		if(!_tour_directory.exists())
+			_tour_directory.mkdirs();
+
+		return _tour_directory;
+	}
 
 
 

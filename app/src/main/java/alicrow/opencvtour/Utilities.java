@@ -2,6 +2,7 @@ package alicrow.opencvtour;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 /**
  * Created by daniel on 6/2/15.
@@ -9,7 +10,10 @@ import android.graphics.BitmapFactory;
  */
 public class Utilities {
 
+	public static final String TAG = "Utilities";
+
 	public static Bitmap decodeSampledBitmap(String image_file_path, int reqWidth, int reqHeight) {
+		Log.v(TAG, "creating bitmap for " + image_file_path);
 		// First decode with inJustDecodeBounds=true to check dimensions
 		final BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inJustDecodeBounds = true;

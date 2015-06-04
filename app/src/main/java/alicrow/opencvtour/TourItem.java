@@ -3,6 +3,7 @@ package alicrow.opencvtour;
 import android.location.Location;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,7 +18,8 @@ public class TourItem
 
 	String _name;
 	String _description;
-	String _image_filename;
+	String _main_image_filename = "";    /// filename of the TourItem's main image, to be displayed in thumbnails
+	ArrayList<String> _image_filenames = new ArrayList<>();
 	/// TODO: audio file
 	Location _location;
 
@@ -29,13 +31,11 @@ public class TourItem
 	{
 		_name = "";
 		_description = "";
-		_image_filename = "";
 		_unique_id = _next_id;
 		++_next_id;
 	}
 	public TourItem(Map<String,Object> data) {
 		_unique_id = _next_id;
-		_image_filename = "";
 		++_next_id;
 		loadFromMap(data);
 	}
@@ -48,41 +48,47 @@ public class TourItem
 		Map<String, Object> data = new HashMap<>();
 		data.put("name", _name);
 		data.put("description", _description);
-		Log.i(TAG, "filename is: " + _image_filename);
-		if(_image_filename == null)
-			Log.e(TAG, "_image_filename is null.");
 
-		if(!_image_filename.equals("") && !_image_filename.equals("null"))
-			data.put("image", _image_filename);
+		if(hasMainImage())
+			data.put("main_image", _main_image_filename);
 
-		/// Location contains a bunch of information we're not interested in (e.g. timestamp, speed), so we're just going to export the information that's actually useful to us.
-		Map<String, Object> gps_data = new HashMap<>();
-		if(_location.hasAccuracy())
-			gps_data.put("accuracy", _location.getAccuracy());
-		if(_location.hasAltitude())
-			gps_data.put("altitude", _location.getAltitude());
-		/// bearing? Could be useful. Tells us where the user is facing.
-		gps_data.put("latitude", _location.getLatitude());
-		gps_data.put("longitude", _location.getLongitude());
+		data.put("images", _image_filenames);
 
-		data.put("location", gps_data);
+		if(_location != null) {
+			/// Location contains a bunch of information we're not interested in (e.g. timestamp, speed), so we're just going to export the information that's actually useful to us.
+			Map<String, Object> gps_data = new HashMap<>();
+			if (_location.hasAccuracy())
+				gps_data.put("accuracy", _location.getAccuracy());
+			if (_location.hasAltitude())
+				gps_data.put("altitude", _location.getAltitude());
+			/// bearing? Could be useful. Tells us where the user is facing.
+			gps_data.put("latitude", _location.getLatitude());
+			gps_data.put("longitude", _location.getLongitude());
+
+			data.put("location", gps_data);
+		}
 
 		return data;
 	}
 	public void loadFromMap(Map<String,Object> data) {
 		setName((String) data.get("name"));
 		setDescription((String) data.get("description"));
-		if(data.containsKey("image") && data.get("image") != null) {
-			setImage((String) data.get("image"));
-		}else
-			_image_filename = "";
+		if(data.containsKey("main_image") && data.get("main_image") != null) {
+			setMainImage((String) data.get("main_image"));
+		} else
+			_main_image_filename = "";
+
+		if(data.containsKey("images") && data.get("images") != null) {
+			for(String image : (ArrayList<String>) data.get("images")) {
+				addImage(image);
+			}
+		}
+
 
 		if(data.containsKey("location") && data.get("location") != null) {
 			Map<String, Object> gps_data = (Map<String, Object>) data.get("location");
-
 			setLocation(gps_data);
 		}
-
 	}
 
 
@@ -105,12 +111,35 @@ public class TourItem
 	}
 
 
-	public String getImageFilename() {
-		return _image_filename;
+	public String getMainImageFilename() {
+		return _main_image_filename;
 	}
-	public void setImage(String filename) {
-		Log.i(TAG, "setting _image_filename to '" + filename + "'");
-		_image_filename = filename;
+	public void setMainImage(String filename) {
+		_main_image_filename = filename;
+	}
+	public boolean hasMainImage() {
+		return (_main_image_filename != null) && !_main_image_filename.equals("");
+	}
+
+	public ArrayList<String> getImageFilenames() {
+		return _image_filenames;
+	}
+	public void addImage(String filename) {
+		_image_filenames.add(filename);
+		if(!hasMainImage()) {
+			/// make this the main image if we don't have a main image set yet
+			setMainImage(filename);
+		}
+	}
+	public void removeImage(String filename) {
+		_image_filenames.remove(filename);
+		if(hasMainImage() && _main_image_filename.equals(filename)) {
+			/// if we just deleted the main image, choose a new main image
+			if(_image_filenames.size() == 0)
+				_main_image_filename = "";
+			else
+				_main_image_filename = _image_filenames.get(0);
+		}
 	}
 
 	public Location getLocation() {
