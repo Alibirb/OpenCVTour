@@ -8,7 +8,7 @@ import android.view.MenuItem;
 
 public class EditTourActivity extends Activity {
 
-	public static int EDIT_TOUR_REQUEST = 0x002;
+	public static final int EDIT_TOUR_REQUEST = 0x002;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

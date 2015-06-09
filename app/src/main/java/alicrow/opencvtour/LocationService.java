@@ -1,6 +1,7 @@
 package alicrow.opencvtour;
 
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Binder;
@@ -18,30 +19,31 @@ import java.util.ArrayList;
 
 /**
  * Created by daniel on 5/28/15.
+ *
+ * Wrapper around the Google LocationServices API.
+ * Handles the details so that other classes can just connect to LocationService and query it for the last known location.
  */
 public class LocationService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
-	GoogleApiClient _google_api_client;
-	boolean _requesting_location_updates;
-	LocationRequest _location_request;
-	Location _current_location;
-	ArrayList<LocationUpdateListener> _listeners;
-
 	private static final String TAG = "LocationService";
 
+	private GoogleApiClient _google_api_client;
+	private boolean _requesting_location_updates;
+	private LocationRequest _location_request;
+	private Location _current_location;
+	private ArrayList<LocationUpdateListener> _listeners;
+	private final IBinder _binder = new LocationServiceBinder();
 
-	public void setupGoogleLocationServices() {
+	private void setupGoogleLocationServices() {
 		_google_api_client = new GoogleApiClient.Builder(this).addConnectionCallbacks(this).addOnConnectionFailedListener(this).addApi(LocationServices.API).build();
-
 	}
 
-	protected void createLocationRequest() {
+	private void createLocationRequest() {
 		_location_request = new LocationRequest();
 		_location_request.setInterval(10000);
 		_location_request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 	}
 
 	public Location getCurrentLocation() {
-		/// Get the last known location if we don't have a valid location stored.
 		if(_current_location == null)
 			_current_location = LocationServices.FusedLocationApi.getLastLocation(_google_api_client);
 
@@ -60,25 +62,37 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 
 	@Override
 	public void onConnected(Bundle connectionHint) {
-		// Connected to Google Play services!
-		// The good stuff goes here.
 		Log.i(TAG, "connected to Google Play services");
 		if(_requesting_location_updates)
 			LocationServices.FusedLocationApi.requestLocationUpdates(_google_api_client, _location_request, this);
-
 	}
 
 	@Override
 	public void onConnectionSuspended(int cause) {
-		// The connection has been interrupted.
-		// Disable any UI components that depend on Google APIs until onConnected() is called.
 		Log.i(TAG, "connection to Google Play services has been suspended");
 	}
 
 	@Override
 	public void onConnectionFailed(ConnectionResult result) {
-		// This callback is important for handling errors that may occur while attempting to connect with Google.
 		Log.i(TAG, "connection to Google Play services has failed");
+	}
+
+	public static class ServiceConnection implements android.content.ServiceConnection {
+		private LocationService _service;
+
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// This is called when the connection with the service has been established, giving us the service object we can use to interact with the service.  Because we have bound to a explicit service that we know is running in our own process, we can cast its IBinder to a concrete class and directly access it.
+			_service = ((LocationService.LocationServiceBinder)service).getService();
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			// This is called when the connection with the service has been unexpectedly disconnected -- that is, its process crashed.
+			// Because it is running in our same process, we should never see this happen.
+			_service = null;
+		}
+		public LocationService getService() {
+			return _service;
+		}
 	}
 
 	/**
@@ -94,10 +108,6 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 	public IBinder onBind(Intent intent) {
 		return _binder;
 	}
-
-	// This is the object that receives interactions from clients.  See RemoteService for a more complete example.
-	private final IBinder _binder = new LocationServiceBinder();
-
 
 	@Override
 	public void onLocationChanged(Location location) {
@@ -121,9 +131,6 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 	public interface LocationUpdateListener {
 		void onLocationUpdated(Location location);
 	}
-
-
-
 }
 
 

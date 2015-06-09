@@ -45,11 +45,5 @@
 		android:id="@+id/save_tour"
 		android:text="Save tour"/>
 
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/load_tour"
-		android:text="Load tour"/>
-
 
 </LinearLayout>

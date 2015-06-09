@@ -10,25 +10,22 @@ import java.util.Map;
 /**
  * Created by daniel on 5/25/15.
  *
- * Represents an item on a tour.
+ * Represents an item on a tour, e.g. the Eiffel Tower
  */
-public class TourItem
-{
-	static String TAG = "TourItem";
+public class TourItem {
+	private static final String TAG = "TourItem";
 
-	String _name;
-	String _description;
-	String _main_image_filename = "";    /// filename of the TourItem's main image, to be displayed in thumbnails
-	ArrayList<String> _image_filenames = new ArrayList<>();
+	private String _name;
+	private String _description;
+	private String _main_image_filename = "";    /// filename of the TourItem's main image, to be displayed in thumbnails
+	private ArrayList<String> _image_filenames = new ArrayList<>();
 	/// TODO: audio file
-	Location _location;
+	private Location _location;
 
+	private final long _unique_id;
+	private static long _next_id = 0;
 
-	long _unique_id;
-	static long _next_id = 0;
-
-	public TourItem()
-	{
+	public TourItem() {
 		_name = "";
 		_description = "";
 		_unique_id = _next_id;
@@ -42,7 +39,7 @@ public class TourItem
 
 	/**
 	 * Saves this TourItem into a Map so we can export it.
-	 * @return
+	 * @return a map containing all the data we want to save from this TourItem
 	 */
 	public Map<String,Object> saveToMap() {
 		Map<String, Object> data = new HashMap<>();
@@ -80,14 +77,12 @@ public class TourItem
 
 		if(data.containsKey("images") && data.get("images") != null) {
 			for(String image : (ArrayList<String>) data.get("images")) {
-				addImage(image);
+				addImageFilename(image);
 			}
 		}
 
-
 		if(data.containsKey("location") && data.get("location") != null) {
-			Map<String, Object> gps_data = (Map<String, Object>) data.get("location");
-			setLocation(gps_data);
+			setLocation((Map<String, Object>) data.get("location"));
 		}
 	}
 
@@ -110,7 +105,6 @@ public class TourItem
 		return _unique_id;
 	}
 
-
 	public String getMainImageFilename() {
 		return _main_image_filename;
 	}
@@ -124,7 +118,7 @@ public class TourItem
 	public ArrayList<String> getImageFilenames() {
 		return _image_filenames;
 	}
-	public void addImage(String filename) {
+	public void addImageFilename(String filename) {
 		_image_filenames.add(filename);
 		if(!hasMainImage()) {
 			/// make this the main image if we don't have a main image set yet

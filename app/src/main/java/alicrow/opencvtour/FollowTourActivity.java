@@ -1,14 +1,10 @@
 package alicrow.opencvtour;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
-import android.os.IBinder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -18,10 +14,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
+/**
+ * Activity to follow a Tour.
+ */
 public class FollowTourActivity extends Activity implements View.OnClickListener {
-
 	private static final String TAG = "FollowTourActivity";
+
+	private LocationService.ServiceConnection _connection;
+	private boolean _service_is_bound = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -30,20 +30,18 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		findViewById(R.id.find_closest_tour_item).setOnClickListener(this);
 
-		doBindService();
-
+		bindLocationService();
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_follow_tour, menu);
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will automatically handle clicks on the Home/Up button, so long as you specify a parent activity in AndroidManifest.xml.
+		// Handle action bar item clicks
 		int id = item.getItemId();
 
 		//noinspection SimplifiableIfStatement
@@ -56,60 +54,30 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 	@Override
 	public void onClick(View v) {
-		switch(v.getId())
-		{
+		switch(v.getId()) {
 			case R.id.find_closest_tour_item:
-				updateDisplay(mBoundService.getCurrentLocation());
+				updateDisplay(_connection.getService().getCurrentLocation());
 				break;
 		}
 	}
 
-
-
-	private LocationService mBoundService;
-
-	private ServiceConnection mConnection = new ServiceConnection() {
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			// This is called when the connection with the service has been established, giving us the service object we can use to interact with the service.  Because we have bound to a explicit service that we know is running in our own process, we can cast its IBinder to a concrete class and directly access it.
-			mBoundService = ((LocationService.LocationServiceBinder)service).getService();
-			//mBoundService.addListener(_this);
-		}
-
-		public void onServiceDisconnected(ComponentName className) {
-			// This is called when the connection with the service has been unexpectedly disconnected -- that is, its process crashed.
-			// Because it is running in our same process, we should never see this happen.
-			mBoundService = null;
-		}
-	};
-
-	boolean mIsBound = false;
-
-	void doBindService() {
-		// Establish a connection with the service.  We use an explicit class name because we want a specific service implementation that we know will be running in our own process (and thus won't be supporting component replacement by other applications).
-		bindService(new Intent(this, LocationService.class), mConnection, Context.BIND_AUTO_CREATE);
-		mIsBound = true;
+	private void bindLocationService() {
+		_connection = new LocationService.ServiceConnection();
+		bindService(new Intent(this, LocationService.class), _connection, Context.BIND_AUTO_CREATE);
+		_service_is_bound = true;
 	}
-
-	void doUnbindService() {
-		if (mIsBound) {
-			// Detach our existing connection.
-			unbindService(mConnection);
-			mIsBound = false;
+	private void unbindLocationService() {
+		if (_service_is_bound) {
+			unbindService(_connection);
+			_service_is_bound = false;
 		}
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		//mBoundService.removeListener(this);
-		doUnbindService();
+		unbindLocationService();
 	}
-
-/*
-	public void onLocationUpdated(Location location) {
-		updateDisplay(location);
-		Toast.makeText(this, "location updated", Toast.LENGTH_SHORT).show();
-	}*/
 
 	private void updateDisplay(Location current_location) {
 		if (current_location == null) {
@@ -118,9 +86,43 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 			Toast.makeText(this, "Couldn't determine location. Ensure location is enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
 			return;
 		}
+
 		((TextView) findViewById(R.id.current_location)).setText("Current location: " + current_location.getLatitude() + ", " + current_location.getLongitude() + ", accuracy: " + current_location.getAccuracy() + " meters");
 
+		TourItem closest_item = findClosestTourItem(current_location);
 
+		if(closest_item != null) {
+			findViewById(R.id.closest_tour_item_name).setVisibility(View.VISIBLE);
+			findViewById(R.id.closest_tour_item_location).setVisibility(View.VISIBLE);
+			findViewById(R.id.closest_tour_item_description).setVisibility(View.VISIBLE);
+
+			Log.i(TAG, "closest item is named " + closest_item.getName());
+
+			((TextView) findViewById(R.id.closest_tour_item_name)).setText(closest_item.getName());
+			((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + closest_item.getLocation().getLatitude() + ", " + closest_item.getLocation().getLongitude());
+			((TextView) findViewById(R.id.closest_tour_item_description)).setText(closest_item.getDescription());
+
+			if(closest_item.hasMainImage()) {
+				/// display a picture of the TourItem, scaled to fit available space
+				ImageView item_picture = (ImageView) findViewById(R.id.closest_tour_item_picture);
+				item_picture.setVisibility(View.VISIBLE);
+				String filepath = closest_item.getMainImageFilename();
+				BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
+				int width = item_picture.getWidth();
+				int height = width * (bounds.outHeight / bounds.outWidth);
+				item_picture.setImageBitmap(Utilities.decodeSampledBitmap(filepath, width, height));
+			} else {
+				findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
+			}
+		} else {
+			findViewById(R.id.closest_tour_item_name).setVisibility(View.INVISIBLE);
+			findViewById(R.id.closest_tour_item_location).setVisibility(View.INVISIBLE);
+			findViewById(R.id.closest_tour_item_description).setVisibility(View.INVISIBLE);
+			findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
+		}
+	}
+
+	private TourItem findClosestTourItem(Location current_location) {
 		TourItem closest_item = null;
 		double closest_distance = Double.MAX_VALUE;
 		for(TourItem item : Tour.getCurrentTour().getTourItems()) {
@@ -129,36 +131,6 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 				closest_distance = current_location.distanceTo(item.getLocation());
 			}
 		}
-		if(closest_item != null) {
-			findViewById(R.id.closest_tour_item_name).setVisibility(View.VISIBLE);
-			findViewById(R.id.closest_tour_item_location).setVisibility(View.VISIBLE);
-			findViewById(R.id.closest_tour_item_description).setVisibility(View.VISIBLE);
-
-			Log.i(TAG, "closest item is named " + closest_item.getName());
-			Log.i(TAG, "image filename is '" + closest_item.getMainImageFilename() + "'");
-
-			((TextView) findViewById(R.id.closest_tour_item_name)).setText(closest_item.getName());
-			((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + closest_item.getLocation().getLatitude() + ", " + closest_item.getLocation().getLongitude());
-			((TextView) findViewById(R.id.closest_tour_item_description)).setText(closest_item.getDescription());
-			if(closest_item.hasMainImage()) {
-				/// display a picture of the TourItem, scaled to fit available space
-				findViewById(R.id.closest_tour_item_picture).setVisibility(View.VISIBLE);
-				String filepath = closest_item.getMainImageFilename();
-				BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
-				int width = findViewById(R.id.closest_tour_item_picture).getWidth();
-				int height = width * (bounds.outHeight / bounds.outWidth);
-				Bitmap image = Utilities.decodeSampledBitmap(closest_item.getMainImageFilename(), width, height);
-				((ImageView) findViewById(R.id.closest_tour_item_picture)).setImageBitmap(image);
-			} else {
-				findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
-			}
-		} else {
-			/// no TourItem detected.
-			findViewById(R.id.closest_tour_item_name).setVisibility(View.INVISIBLE);
-			findViewById(R.id.closest_tour_item_location).setVisibility(View.INVISIBLE);
-			findViewById(R.id.closest_tour_item_description).setVisibility(View.INVISIBLE);
-		}
+		return closest_item;
 	}
-
-
 }

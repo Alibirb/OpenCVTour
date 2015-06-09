@@ -23,28 +23,15 @@ import java.util.List;
 /**
  * Fragment to display the list of TourItems in a Tour.
  */
-public class EditTourItemListFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener {
+public class TourItemListFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener {
 
-	private ListView _list_view;
-
-	//private ArrayList<TourItem> _tour_items;
 	private Tour _tour;
+	private ListView _list_view;
+	private TourItemArrayAdapter _adapter;
 
-	private EditTourItemListFragment _listener = this;
-
-
-	public void onItemClick(AdapterView parent, View v, int position, long id) {
-		// Switch to TourItem-editing mode.
-		Intent intent = new Intent(getActivity(), EditTourItemActivity.class);
-		Bundle bundle = new Bundle();
-		bundle.putShort("position", (short) position);
-
-		intent.putExtras(bundle);
-		startActivityForResult(intent, EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST);
-	}
-
-
-
+	/**
+	 * Adapter to display TourItems in our list
+	 */
 	public class TourItemArrayAdapter extends ArrayAdapter<TourItem>
 	{
 		private final Context _context;
@@ -53,16 +40,14 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 
 		final int INVALID_ID = -1;
 
-		public TourItemArrayAdapter(Context context, List<TourItem> items)
-		{
+		public TourItemArrayAdapter(Context context, List<TourItem> items) {
 			super(context, -1, items);
 			_context = context;
 			_items = items;
 		}
 
 		@Override
-		public View getView(int position, View convertView, ViewGroup parent)
-		{
+		public View getView(int position, View convertView, ViewGroup parent) {
 			TourItem item = _items.get(position);
 
 			/// Create row_view, or recycle an existing view if possible
@@ -78,15 +63,16 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 			((TextView) row_view.findViewById(R.id.tour_item_description)).setText(item.getDescription());
 
 			if(item.hasMainImage()) {
-				if(!_thumbnails.containsKey(item.getMainImageFilename()))
-					_thumbnails.put(item.getMainImageFilename(), Utilities.decodeSampledBitmap(item.getMainImageFilename(), 64, 64));
-				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageBitmap(_thumbnails.get(item.getMainImageFilename()));
-			} else ((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageResource(R.drawable.default_thumbnail);
+				String image_filename = item.getMainImageFilename();
+				if(!_thumbnails.containsKey(image_filename))
+					_thumbnails.put(image_filename, Utilities.decodeSampledBitmap(image_filename, 64, 64));
+				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageBitmap(_thumbnails.get(image_filename));
+			} else
+				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageResource(R.drawable.default_thumbnail);
 
 			/// Todo: audio support
 
-			/// Set up event listeners for the item's buttons
-			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(_listener);
+			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(TourItemListFragment.this);
 
 			return row_view;
 		}
@@ -106,17 +92,14 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 	}
 
 
-
-
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View v = inflater.inflate(R.layout.fragment_edit_tour_item_list, container, false);
+		View v = inflater.inflate(R.layout.fragment_tour_item_list, container, false);
 
 		v.findViewById(R.id.add_tour_item).setOnClickListener(this);
 
 		return v;
 	}
-
 
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
@@ -126,19 +109,17 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 
 		_list_view = (ListView) getActivity().findViewById(R.id.list);
 
-		ArrayList<TourItem> _tour_items = _tour.getTourItems();
+		ArrayList<TourItem> tour_items = _tour.getTourItems();
 
 		/// Set up _list_view to show the items in our list.
-		TourItemArrayAdapter adapter = new TourItemArrayAdapter(getActivity(), _tour_items);
-		_list_view.setAdapter(adapter);
+		_adapter = new TourItemArrayAdapter(getActivity(), tour_items);
+		_list_view.setAdapter(_adapter);
 
 		_list_view.setOnItemClickListener(this);
 	}
 
-
 	@Override
-	public void onClick(View v)
-	{
+	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.add_tour_item:
 				addNewTourItem();
@@ -146,36 +127,38 @@ public class EditTourItemListFragment extends Fragment implements View.OnClickLi
 			case R.id.delete_tour_item: {
 				final int position = _list_view.getPositionForView(v);
 				if (position != ListView.INVALID_POSITION) {
-					/// Delete that TourItem
-					((TourItemArrayAdapter) _list_view.getAdapter()).remove(((TourItemArrayAdapter) _list_view.getAdapter()).getItem(position));
+					_adapter.remove(_adapter.getItem(position));
 				}
 			}
 		}
 	}
 
-	/**
-	 * Adds a new TourItem, and launches EditTourItemActivity for it.
-	 */
-	public void addNewTourItem()
-	{
-		/// Add empty TourItem to the Tour
-		_tour.getTourItems().add(new TourItem());
-		((TourItemArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
+	public void onItemClick(AdapterView parent, View v, int position, long id) {
+		editTourItem(position);
+	}
 
-		/// Switch to TourItem-editing mode.
+	/**
+	 * Launches EditTourItemActivity for the TourItem specified
+	 * @param position_in_list position of the TourItem in the Tour's list
+	 */
+	private void editTourItem(int position_in_list) {
 		Intent intent = new Intent(getActivity(), EditTourItemActivity.class);
 		Bundle bundle = new Bundle();
-		bundle.putShort("position", (short) (_tour.getTourItems().size() - 1));
+		bundle.putShort("position", (short) position_in_list);
 		intent.putExtras(bundle);
 		startActivityForResult(intent, EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST);
 	}
 
+	private void addNewTourItem() {
+		_tour.getTourItems().add(new TourItem());
+		_adapter.notifyDataSetChanged();
+		editTourItem(_tour.getTourItems().size() - 1);
+	}
+
 	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data)
-	{
-		/// Update our ListView if the EditTourItemActivity finished successfully.
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST) {
-			((TourItemArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
+			_adapter.notifyDataSetChanged();
 		}
 	}
 

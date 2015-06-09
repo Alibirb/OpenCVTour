@@ -11,14 +11,12 @@ import android.widget.TextView;
 
 
 /**
- * Fragment listing options to edit a Tour.
+ * Fragment to edit Tour settings.
  */
 public class EditTourFragment extends Fragment implements View.OnClickListener {
 
 	private static final String TAG = "EditTourFragment";
 
-	public EditTourFragment() {
-	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -27,7 +25,6 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 		v.findViewById(R.id.tour_items).setOnClickListener(this);
 		v.findViewById(R.id.enable_gps).setOnClickListener(this);
 		v.findViewById(R.id.save_tour).setOnClickListener(this);
-		v.findViewById(R.id.load_tour).setOnClickListener(this);
 		v.findViewById(R.id.follow_tour).setOnClickListener(this);
 
 		((CheckBox) v.findViewById(R.id.enable_gps)).setChecked(Tour.getCurrentTour().getGpsEnabled());
@@ -40,22 +37,16 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.tour_items:
-				Intent intent = new Intent(getActivity(), EditTourItemListActivity.class);
-				startActivity(intent);
+				startActivity(new Intent(getActivity(), TourItemListActivity.class));
 				break;
 
 			case R.id.enable_gps:
-				boolean checked = ((CheckBox) v).isChecked();
-				Tour.getCurrentTour().setGpsEnabled(checked);
+				Tour.getCurrentTour().setGpsEnabled(((CheckBox) v).isChecked());
 				break;
 
 			case R.id.save_tour: {
 				Tour.getCurrentTour().setName(((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString());
 				Tour.getCurrentTour().saveToFile();
-				break;
-			}
-			case R.id.load_tour: {
-				/// FIXME: this button no longer does anything (since all available Tours are loaded at the beginning of the App). Should probably be replaced with "drop changes and reload" or something.
 				break;
 			}
 			case R.id.follow_tour: {

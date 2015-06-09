@@ -51,7 +51,7 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 
-import alicrow.opencvtour.EditTourItemListFragment;
+import alicrow.opencvtour.TourItemListFragment;
 
 /**
  * The dynamic ListView is an extension of ListView that supports cell dragging
@@ -121,7 +121,7 @@ public class DynamicListView extends ListView {
         init(context);
     }
 
-    public void init(Context context) {
+    private void init(Context context) {
         setOnItemLongClickListener(mOnItemLongClickListener);
         setOnScrollListener(mScrollListener);
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
@@ -343,7 +343,7 @@ public class DynamicListView extends ListView {
                 return;
             }
 
-            swapElements( (ArrayList) ((EditTourItemListFragment.TourItemArrayAdapter) getAdapter()).getList() , originalItem, getPositionForView(switchView));
+            swapElements( (ArrayList) ((TourItemListFragment.TourItemArrayAdapter) getAdapter()).getList() , originalItem, getPositionForView(switchView));
 
             ((BaseAdapter) getAdapter()).notifyDataSetChanged();
 
