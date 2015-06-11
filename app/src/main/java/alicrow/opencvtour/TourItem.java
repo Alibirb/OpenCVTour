@@ -103,6 +103,8 @@ public class TourItem {
 	}
 	public void setDescription(String description) {
 		_description = description;
+		if(_description == null || _description.equals("null"))
+			_description = "";
 	}
 
 	public String getDirections() {
@@ -110,6 +112,8 @@ public class TourItem {
 	}
 	public void setDirections(String directions) {
 		_directions = directions;
+		if(_directions == null || _directions.equals("null"))
+			_directions = "";
 	}
 
 	public long getId() {

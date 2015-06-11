@@ -137,6 +137,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		findViewById(R.id.closest_tour_item_name).setVisibility(View.VISIBLE);
 		findViewById(R.id.closest_tour_item_location).setVisibility(View.VISIBLE);
 		findViewById(R.id.closest_tour_item_description).setVisibility(View.VISIBLE);
+		findViewById(R.id.directions).setVisibility(View.VISIBLE);
 
 		((TextView) findViewById(R.id.closest_tour_item_name)).setText(item.getName());
 		((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + item.getLocation().getLatitude() + ", " + item.getLocation().getLongitude());
@@ -162,6 +163,8 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		} else {
 			if(!getNextTourItem().getDirections().equals("")) {
 				((TextView) findViewById(R.id.directions)).setText(getNextTourItem().getDirections());
+			} else {
+				findViewById(R.id.directions).setVisibility(View.INVISIBLE);
 			}
 		}
 	}
