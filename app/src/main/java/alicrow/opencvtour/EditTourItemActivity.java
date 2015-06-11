@@ -231,11 +231,12 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 		((EditText) findViewById(R.id.edit_tour_item_name)).setText(_tour_item.getName());
 		((EditText) findViewById(R.id.edit_tour_item_description)).setText(_tour_item.getDescription());
+		((EditText) findViewById(R.id.edit_tour_item_directions)).setText(_tour_item.getDirections());
 		/// TODO: handle audio
 
 		if(_tour_item.getLocation() != null) {
 			Log.i(TAG, "loading GPS coordinates...");
-			((TextView) findViewById(R.id.tour_item_location)).setText("location: " + _tour_item.getLocation().getLatitude() + ", " + _tour_item.getLocation().getLongitude());
+			((TextView) findViewById(R.id.tour_item_location)).setText("location: " + _tour_item.getLocation().getLatitude() + ", " + _tour_item.getLocation().getLongitude() + ", accuracy: " + _tour_item.getLocation().getAccuracy() + " meters");
 		}
 
 		findViewById(R.id.image_picker).setOnClickListener(this);
@@ -275,7 +276,8 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	private void applyChanges()
 	{
 		_tour_item.setName(((EditText) findViewById(R.id.edit_tour_item_name)).getText().toString());
-		_tour_item.setDescription( ((EditText) findViewById(R.id.edit_tour_item_description)).getText().toString());
+		_tour_item.setDescription(((EditText) findViewById(R.id.edit_tour_item_description)).getText().toString());
+		_tour_item.setDirections(((EditText) findViewById(R.id.edit_tour_item_directions)).getText().toString());
 
 		Bundle data = new Bundle();
 		data.putBoolean("item_edited", true);
@@ -299,7 +301,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 					Toast.makeText(this, "Could not determine location. Make sure you have location enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
 				} else {
 					_tour_item.setLocation(location);
-					((TextView) findViewById(R.id.tour_item_location)).setText("location: " + location.getLatitude() + ", " + location.getLongitude());
+					((TextView) findViewById(R.id.tour_item_location)).setText("location: " + location.getLatitude() + ", " + location.getLongitude() + ", accuracy: " + location.getAccuracy() + " meters");
 				}
 				break;
 			}

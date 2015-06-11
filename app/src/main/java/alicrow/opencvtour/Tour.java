@@ -26,6 +26,7 @@ public class Tour {
 
 	private ArrayList<TourItem> _tour_items;
 	private boolean _gps_enabled;
+	private boolean _enforce_order;   /// indicates if the TourItems must be visited in sequence
 	private String _name;
 
 	public static Tour getCurrentTour() {
@@ -90,6 +91,7 @@ public class Tour {
 		Map<String, Object> data = new HashMap<>();
 		data.put("gps_enabled", _gps_enabled);
 		data.put("name", _name);
+		data.put("enforce_order", _enforce_order);
 
 		ArrayList<Map<String, Object>> item_maps = new ArrayList<>();
 		for(TourItem item : _tour_items)
@@ -100,6 +102,7 @@ public class Tour {
 	}
 	public void loadFromMap(Map<String,Object> data) {
 		setGpsEnabled((Boolean) data.get("gps_enabled"));
+		setEnforceOrder((Boolean) data.get("enforce_order"));
 		setName((String) data.get("name"));
 
 		_tour_items.clear();
@@ -157,6 +160,13 @@ public class Tour {
 	}
 	public void setName(String name) {
 		_name = name;
+	}
+
+	public boolean getEnforceOrder() {
+		return _enforce_order;
+	}
+	public void setEnforceOrder(boolean enforce) {
+		_enforce_order = enforce;
 	}
 
 }

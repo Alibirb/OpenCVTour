@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +23,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 	private LocationService.ServiceConnection _connection;
 	private boolean _service_is_bound = false;
+	private int _next_item_index = 0;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +33,14 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		findViewById(R.id.find_closest_tour_item).setOnClickListener(this);
 
 		bindLocationService();
+
+		if(savedInstanceState != null) {
+			if(savedInstanceState.containsKey("next_item_index"))
+				_next_item_index = savedInstanceState.getInt("next_item_index");
+		}
+
+		if(getNextTourItem() != null)
+			((TextView) findViewById(R.id.directions)).setText(getNextTourItem().getDirections());
 	}
 
 	@Override
@@ -79,6 +89,13 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		unbindLocationService();
 	}
 
+	@Override
+	protected void onSaveInstanceState(@NonNull Bundle outState) {
+		super.onSaveInstanceState(outState);
+
+		outState.putInt("next_item_index", _next_item_index);
+	}
+
 	private void updateDisplay(Location current_location) {
 		if (current_location == null) {
 			Log.e(TAG, "got null current location");
@@ -91,29 +108,11 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		TourItem closest_item = findClosestTourItem(current_location);
 
-		if(closest_item != null) {
-			findViewById(R.id.closest_tour_item_name).setVisibility(View.VISIBLE);
-			findViewById(R.id.closest_tour_item_location).setVisibility(View.VISIBLE);
-			findViewById(R.id.closest_tour_item_description).setVisibility(View.VISIBLE);
-
+		if(closest_item != null)
 			Log.i(TAG, "closest item is named " + closest_item.getName());
 
-			((TextView) findViewById(R.id.closest_tour_item_name)).setText(closest_item.getName());
-			((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + closest_item.getLocation().getLatitude() + ", " + closest_item.getLocation().getLongitude());
-			((TextView) findViewById(R.id.closest_tour_item_description)).setText(closest_item.getDescription());
-
-			if(closest_item.hasMainImage()) {
-				/// display a picture of the TourItem, scaled to fit available space
-				ImageView item_picture = (ImageView) findViewById(R.id.closest_tour_item_picture);
-				item_picture.setVisibility(View.VISIBLE);
-				String filepath = closest_item.getMainImageFilename();
-				BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
-				int width = item_picture.getWidth();
-				int height = width * (bounds.outHeight / bounds.outWidth);
-				item_picture.setImageBitmap(Utilities.decodeSampledBitmap(filepath, width, height));
-			} else {
-				findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
-			}
+		if(closest_item != null && (!Tour.getCurrentTour().getEnforceOrder() || getNextTourItem() == closest_item)) {
+			displayTourItem(closest_item);
 		} else {
 			findViewById(R.id.closest_tour_item_name).setVisibility(View.INVISIBLE);
 			findViewById(R.id.closest_tour_item_location).setVisibility(View.INVISIBLE);
@@ -133,4 +132,44 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		}
 		return closest_item;
 	}
+
+	private void displayTourItem(TourItem item) {
+		findViewById(R.id.closest_tour_item_name).setVisibility(View.VISIBLE);
+		findViewById(R.id.closest_tour_item_location).setVisibility(View.VISIBLE);
+		findViewById(R.id.closest_tour_item_description).setVisibility(View.VISIBLE);
+
+		((TextView) findViewById(R.id.closest_tour_item_name)).setText(item.getName());
+		((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + item.getLocation().getLatitude() + ", " + item.getLocation().getLongitude());
+		((TextView) findViewById(R.id.closest_tour_item_description)).setText(item.getDescription());
+
+		if(item.hasMainImage()) {
+			/// display a picture of the TourItem, scaled to fit available space
+			ImageView item_picture = (ImageView) findViewById(R.id.closest_tour_item_picture);
+			item_picture.setVisibility(View.VISIBLE);
+			String filepath = item.getMainImageFilename();
+			BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
+			int width = item_picture.getWidth();
+			int height = width * (bounds.outHeight / bounds.outWidth);
+			item_picture.setImageBitmap(Utilities.decodeSampledBitmap(filepath, width, height));
+		} else {
+			findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
+		}
+
+		_next_item_index = Tour.getCurrentTour().getTourItems().indexOf(item) + 1;
+		if(getNextTourItem() == null) {
+			/// End of tour.
+			((TextView) findViewById(R.id.directions)).setText("Tour complete");
+		} else {
+			if(!getNextTourItem().getDirections().equals("")) {
+				((TextView) findViewById(R.id.directions)).setText(getNextTourItem().getDirections());
+			}
+		}
+	}
+
+	private TourItem getNextTourItem() {
+		if(Tour.getCurrentTour().getTourItems().size() == _next_item_index)
+			return null;    /// Tour is finished
+		return Tour.getCurrentTour().getTourItems().get(_next_item_index);
+	}
+
 }

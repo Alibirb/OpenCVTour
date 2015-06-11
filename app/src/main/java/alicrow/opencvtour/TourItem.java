@@ -17,6 +17,7 @@ public class TourItem {
 
 	private String _name;
 	private String _description;
+	private String _directions;
 	private String _main_image_filename = "";    /// filename of the TourItem's main image, to be displayed in thumbnails
 	private ArrayList<String> _image_filenames = new ArrayList<>();
 	/// TODO: audio file
@@ -28,6 +29,7 @@ public class TourItem {
 	public TourItem() {
 		_name = "";
 		_description = "";
+		_directions = "";
 		_unique_id = _next_id;
 		++_next_id;
 	}
@@ -45,6 +47,7 @@ public class TourItem {
 		Map<String, Object> data = new HashMap<>();
 		data.put("name", _name);
 		data.put("description", _description);
+		data.put("directions", _directions);
 
 		if(hasMainImage())
 			data.put("main_image", _main_image_filename);
@@ -70,6 +73,7 @@ public class TourItem {
 	public void loadFromMap(Map<String,Object> data) {
 		setName((String) data.get("name"));
 		setDescription((String) data.get("description"));
+		setDirections((String) data.get("directions"));
 		if(data.containsKey("main_image") && data.get("main_image") != null) {
 			setMainImage((String) data.get("main_image"));
 		} else
@@ -99,6 +103,13 @@ public class TourItem {
 	}
 	public void setDescription(String description) {
 		_description = description;
+	}
+
+	public String getDirections() {
+		return _directions;
+	}
+	public void setDirections(String directions) {
+		_directions = directions;
 	}
 
 	public long getId() {

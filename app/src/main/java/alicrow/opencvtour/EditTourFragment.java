@@ -24,10 +24,12 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 
 		v.findViewById(R.id.tour_items).setOnClickListener(this);
 		v.findViewById(R.id.enable_gps).setOnClickListener(this);
+		v.findViewById(R.id.enforce_order).setOnClickListener(this);
 		v.findViewById(R.id.save_tour).setOnClickListener(this);
 		v.findViewById(R.id.follow_tour).setOnClickListener(this);
 
 		((CheckBox) v.findViewById(R.id.enable_gps)).setChecked(Tour.getCurrentTour().getGpsEnabled());
+		((CheckBox) v.findViewById(R.id.enforce_order)).setChecked(Tour.getCurrentTour().getEnforceOrder());
 		((TextView) v.findViewById(R.id.tour_name)).setText(Tour.getCurrentTour().getName());
 
 		return v;
@@ -42,6 +44,10 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 
 			case R.id.enable_gps:
 				Tour.getCurrentTour().setGpsEnabled(((CheckBox) v).isChecked());
+				break;
+
+			case R.id.enforce_order:
+				Tour.getCurrentTour().setEnforceOrder(((CheckBox) v).isChecked());
 				break;
 
 			case R.id.save_tour: {
