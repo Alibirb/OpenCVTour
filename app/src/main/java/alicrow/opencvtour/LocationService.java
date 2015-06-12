@@ -61,6 +61,13 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 	}
 
 	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		Log.i(TAG, "LocationService destroyed");
+		_google_api_client.disconnect();
+	}
+
+	@Override
 	public void onConnected(Bundle connectionHint) {
 		Log.i(TAG, "connected to Google Play services");
 		if(_requesting_location_updates)
