@@ -17,7 +17,8 @@
         android:theme="@android:style/Theme.Holo" >
 	    <activity
             android:name=".EditTourItemActivity"
-            android:label="@string/title_activity_edit_tour_item" >
+            android:label="@string/title_activity_edit_tour_item"
+		    android:windowSoftInputMode="stateUnchanged" >
         </activity>
         <activity
             android:name=".TourItemListActivity"

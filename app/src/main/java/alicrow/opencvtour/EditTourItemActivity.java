@@ -3,7 +3,6 @@ package alicrow.opencvtour;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.location.Location;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -29,7 +28,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 
 
 /*
@@ -71,13 +69,11 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	public class TourItemImageAdapter extends BaseAdapter {
 		private Context _context;
 		private TourItem _item;
-		private HashMap<String, Bitmap> _bitmaps;
 		private final int[] CHECKED_STATE_SET = { android.R.attr.state_checked };
 
 		public TourItemImageAdapter(Context c, TourItem item) {
 			_context = c;
 			_item = item;
-			_bitmaps = new HashMap<>();
 		}
 
 		public int getCount() {
@@ -93,8 +89,10 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		}
 
 		public View getView(final int position, View convertView, final ViewGroup parent) {
+			Log.v(TAG, "getView called");
 			final ImageView image_view;
 			if (convertView == null) {
+				Log.v(TAG, "creating new ImageView");
 				// We don't have an existing view to convert, so we need to create a new view
 				image_view = new ImageView(_context) {
 					@Override public int[] onCreateDrawableState(int extraSpace) {
@@ -107,24 +105,17 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 					}
 				};
 				image_view.setBackgroundResource(R.drawable.item_selection_background);
-				image_view.setScaleType(ImageView.ScaleType.CENTER_CROP);
-				image_view.setPadding(8, 8, 8, 8);
+				image_view.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+				int border_size = Utilities.dp_to_px(4);
+				image_view.setPadding(border_size, border_size, border_size, border_size);
 			} else {
 				/// Recycle convertView for better performance
 				image_view = (ImageView) convertView;
 			}
 
 			String image_filename = _item.getImageFilenames().get(position);
-
-			/// compute the bitmap for this image if we haven't already done so, and add it to our cache
-			if(!_bitmaps.containsKey(image_filename)) {
-				_bitmaps.put(image_filename, Utilities.decodeSampledBitmap(image_filename, 128, 128));
-			}
-			if(_bitmaps.get(image_filename) == null)
-				Log.e(TAG, "bitmap is null");
-
-			image_view.setImageBitmap(_bitmaps.get(image_filename));
-			image_view.setLayoutParams(new GridView.LayoutParams(_bitmaps.get(image_filename).getWidth(), _bitmaps.get(image_filename).getHeight()));
+			int column_width = ((GridView) parent).getRequestedColumnWidth();
+			Utilities.loadBitmap(image_view, image_filename, column_width, column_width);
 
 			return image_view;
 		}
@@ -347,6 +338,8 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.REQUEST_IMAGE_CAPTURE) {
 			_tour_item.addImageFilename(_photo_uri.getPath());
 			Log.i(TAG, "saved photo as " + _photo_uri.toString());
+			GridView gridview = (GridView) findViewById(R.id.gridview);
+			((TourItemImageAdapter) gridview.getAdapter()).notifyDataSetChanged();
 		}
 	}
 

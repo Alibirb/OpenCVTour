@@ -151,7 +151,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 			BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
 			int width = item_picture.getWidth();
 			int height = width * (bounds.outHeight / bounds.outWidth);
-			item_picture.setImageBitmap(Utilities.decodeSampledBitmap(filepath, width, height));
+			Utilities.loadBitmap(item_picture, filepath, width, height);
 		} else {
 			findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
 		}
