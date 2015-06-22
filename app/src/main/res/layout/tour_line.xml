@@ -1,7 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:id="@+id/tour_name"
-          android:textSize="16sp"
-	/>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:descendantFocusability="blocksDescendants">
+
+	<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+	          android:layout_width="match_parent"
+	          android:layout_height="wrap_content"
+	          android:paddingTop="16dp"
+	          android:paddingBottom="16dp"
+	          android:id="@+id/tour_name"
+	          android:textSize="16sp"
+	          android:text="Tour name"/>
+
+	<ImageView
+		android:layout_width="36dp"
+		android:layout_height="36dp"
+		android:layout_alignParentRight="true"
+		android:src="@drawable/ic_mode_edit_white_36dp"
+		android:id="@+id/edit_tour"
+		android:scaleType="center"
+		android:layout_marginLeft="16dp"
+		android:layout_centerVertical="true"
+		android:contentDescription="edit" />
+
+</RelativeLayout>

@@ -3,22 +3,25 @@ package alicrow.opencvtour;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import java.util.List;
 
 
 /**
  * Fragment to list available Tours
  */
-public class TourListFragment extends Fragment implements AdapterView.OnItemClickListener, View.OnClickListener {
+public class TourListFragment extends Fragment implements View.OnClickListener {
 	private static final String TAG = "TourListFragment";
 
-	private ListView _list_view;
+	private RecyclerView _recycler_view;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -29,17 +32,11 @@ public class TourListFragment extends Fragment implements AdapterView.OnItemClic
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
-		_list_view = (ListView) getActivity().findViewById(R.id.list);
-		_list_view.setAdapter(new ArrayAdapter<>(getActivity(), R.layout.tour_line, Tour.getTours()));
-		_list_view.setOnItemClickListener(this);
+		_recycler_view = (RecyclerView) getActivity().findViewById(R.id.recycler_view);
+		_recycler_view.setAdapter(new TourAdapter(Tour.getTours()));
+		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
 		getActivity().findViewById(R.id.add_tour).setOnClickListener(this);
-	}
-
-	@Override
-	public void onItemClick(AdapterView parent, View v, int position, long id) {
-		Tour.setSelectedTour(Tour.getTours().get(position));
-		startActivity(new Intent(getActivity(), EditTourActivity.class));
 	}
 
 	@Override
@@ -56,8 +53,67 @@ public class TourListFragment extends Fragment implements AdapterView.OnItemClic
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(requestCode == EditTourActivity.EDIT_TOUR_REQUEST) {
-			((ArrayAdapter) _list_view.getAdapter()).notifyDataSetChanged();
+			_recycler_view.getAdapter().notifyDataSetChanged();
 		}
+	}
+
+	class TourAdapter extends RecyclerView.Adapter<TourAdapter.ViewHolder> {
+		final List<Tour> _tours;
+
+		public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+			public final TextView _text_view;
+
+			public ViewHolder(RelativeLayout v) {
+				super(v);
+				_text_view = (TextView) v.findViewById(R.id.tour_name);
+				_text_view.setOnClickListener(this);
+				v.findViewById(R.id.edit_tour).setOnClickListener(this);
+			}
+
+			@Override
+			public void onClick(View view) {
+				int position = getPosition();
+				Tour.setSelectedTour(Tour.getTours().get(position));
+				switch(view.getId()) {
+					case R.id.edit_tour:
+						startActivity(new Intent(getActivity(), EditTourActivity.class));
+						break;
+					case R.id.tour_name:
+						startActivity(new Intent(getActivity(), FollowTourActivity.class));
+						break;
+				}
+
+			}
+		}
+
+		public TourAdapter(List<Tour> tours) {
+			_tours = tours;
+		}
+
+		// Create new views (invoked by the layout manager)
+		@Override
+		public TourAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+			// create a new view
+			View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.tour_line, parent, false);
+			// set the view's size, margins, paddings and layout parameters
+
+			return new ViewHolder((RelativeLayout) v);
+		}
+
+		// Replace the contents of a view (invoked by the layout manager)
+		@Override
+		public void onBindViewHolder(ViewHolder holder, int position) {
+			// - get element from your dataset at this position
+			// - replace the contents of the view with that element
+			holder._text_view.setText(_tours.get(position).getName());
+		}
+
+		// Return the size of your dataset (invoked by the layout manager)
+		@Override
+		public int getItemCount() {
+			return _tours.size();
+		}
+
 	}
 
 }

@@ -22,7 +22,8 @@ android {
 
 dependencies {
 	compile fileTree(dir: 'libs', include: ['*.jar'])
-	compile 'com.android.support:appcompat-v7:22.1.1'
+	compile 'com.android.support:appcompat-v7:22.2.0'
+	compile 'com.android.support:recyclerview-v7:21.0.0'
 	compile files('libs/snakeyaml-1.15-SNAPSHOT-android.jar')
-	compile 'com.google.android.gms:play-services-location:7.3.0'
+	compile 'com.google.android.gms:play-services-location:7.5.0'
 }
