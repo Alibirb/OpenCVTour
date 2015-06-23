@@ -58,8 +58,8 @@
 		android:layout_height="wrap_content"
 		android:columnWidth="90dp"
 		android:numColumns="auto_fit"
-		android:verticalSpacing="10dp"
-		android:horizontalSpacing="10dp"
+		android:verticalSpacing="4dp"
+		android:horizontalSpacing="4dp"
 		android:stretchMode="columnWidth"
 		android:gravity="center"
 	    />

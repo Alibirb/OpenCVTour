@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -67,12 +68,9 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	 * Adapter to display the TourItem's images
 	 */
 	public class TourItemImageAdapter extends BaseAdapter {
-		private Context _context;
 		private TourItem _item;
-		private final int[] CHECKED_STATE_SET = { android.R.attr.state_checked };
 
-		public TourItemImageAdapter(Context c, TourItem item) {
-			_context = c;
+		public TourItemImageAdapter(TourItem item) {
 			_item = item;
 		}
 
@@ -91,33 +89,24 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		public View getView(final int position, View convertView, final ViewGroup parent) {
 			Log.v(TAG, "getView called");
 			final ImageView image_view;
+			final FrameLayout frame_layout;
 			if (convertView == null) {
 				Log.v(TAG, "creating new ImageView");
 				// We don't have an existing view to convert, so we need to create a new view
-				image_view = new ImageView(_context) {
-					@Override public int[] onCreateDrawableState(int extraSpace) {
-						final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
-						if (((AbsListView)parent).isItemChecked(position)) {
-							/// display selector on the image if it's checked
-							mergeDrawableStates(drawableState, CHECKED_STATE_SET);
-						}
-						return drawableState;
-					}
-				};
-				image_view.setBackgroundResource(R.drawable.item_selection_background);
-				image_view.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-				int border_size = Utilities.dp_to_px(4);
-				image_view.setPadding(border_size, border_size, border_size, border_size);
+				frame_layout = (FrameLayout) getLayoutInflater().inflate(R.layout.selectable_image, parent, false);
+				image_view = (ImageView) frame_layout.findViewById(R.id.image);
+				image_view.setScaleType(ImageView.ScaleType.CENTER_CROP);
 			} else {
 				/// Recycle convertView for better performance
-				image_view = (ImageView) convertView;
+				frame_layout = (FrameLayout) convertView;
+				image_view = (ImageView) frame_layout.findViewById(R.id.image);
 			}
 
 			String image_filename = _item.getImageFilenames().get(position);
 			int column_width = ((GridView) parent).getRequestedColumnWidth();
 			Utilities.loadBitmap(image_view, image_filename, column_width, column_width);
 
-			return image_view;
+			return frame_layout;
 		}
 	}
 
@@ -159,8 +148,16 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 	@Override
 	public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+		Log.d(TAG, "onCreateActionMode called");
+		Log.d(TAG, _images_selected.size() + " images selected");
 		mode.getMenuInflater().inflate(R.menu.context_menu_edit_tour_item, menu);
 		_context_menu = menu;
+
+		if(_images_selected.size() == 1)
+			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(true);
+		else
+			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(false);
+
 		return true;
 	}
 
@@ -172,15 +169,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	@Override
 	public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
 		// Perform updates to the CAB due to an invalidate() request
-		// This gets called when the screen orientation changes, so we use it to fix the layout
-
-		_context_menu = menu;
-
-		if(_images_selected.size() == 1)
-			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(true);
-		else
-			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(false);
-
+		Log.d(TAG, "onPrepareActionMode called");
 		return false;
 	}
 
@@ -193,6 +182,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG, "onCreate called");
 		super.onCreate(savedInstanceState);
 
 		/// custom action bar
@@ -215,7 +205,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 		/// GridView of images in the TourItem
 		GridView gridview = (GridView) findViewById(R.id.gridview);
-		gridview.setAdapter(new TourItemImageAdapter(this, _tour_item));
+		gridview.setAdapter(new TourItemImageAdapter(_tour_item));
 		gridview.setChoiceMode(GridView.CHOICE_MODE_MULTIPLE_MODAL);
 		gridview.setMultiChoiceModeListener(this);
 		gridview.setDrawSelectorOnTop(true);

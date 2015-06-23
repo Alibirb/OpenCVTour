@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="@dimen/list_item_height_single_line"
                 android:descendantFocusability="blocksDescendants">
 
 	<TextView xmlns:android="http://schemas.android.com/apk/res/android"
 	          android:layout_width="match_parent"
 	          android:layout_height="wrap_content"
+	          android:layout_marginLeft="16dp"
+	          android:layout_marginStart="16dp"
 	          android:paddingTop="16dp"
 	          android:paddingBottom="16dp"
 	          android:id="@+id/tour_name"
@@ -21,6 +23,7 @@
 		android:id="@+id/edit_tour"
 		android:scaleType="center"
 		android:layout_marginLeft="16dp"
+		android:layout_marginRight="16dp"
 		android:layout_centerVertical="true"
 		android:contentDescription="edit" />
 

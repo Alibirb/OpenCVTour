@@ -62,15 +62,17 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 
 			((TextView) row_view.findViewById(R.id.tour_item_name)).setText(item.getName());
 			((TextView) row_view.findViewById(R.id.tour_item_description)).setText(item.getDescription());
+			if(item.getDescription().equals(""))
+				row_view.findViewById(R.id.tour_item_description).setVisibility(View.GONE);
+			else
+				row_view.findViewById(R.id.tour_item_description).setVisibility(View.VISIBLE);
 
 			if(item.hasMainImage()) {
 				String image_filename = item.getMainImageFilename();
 				ImageView image_view = (ImageView) row_view.findViewById(R.id.tour_item_thumbnail);
-				Utilities.loadBitmap(image_view, image_filename, 64, 64);
+				Utilities.loadBitmap(image_view, image_filename, Utilities.dp_to_px(40), Utilities.dp_to_px(40));
 			} else
 				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageResource(R.drawable.default_thumbnail);
-
-			/// Todo: audio support
 
 			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(TourItemListFragment.this);
 

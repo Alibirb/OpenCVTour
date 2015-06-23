@@ -14,7 +14,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Holo" >
+        android:theme="@style/AppTheme" >
 	    <activity
             android:name=".EditTourItemActivity"
             android:label="@string/title_activity_edit_tour_item"
