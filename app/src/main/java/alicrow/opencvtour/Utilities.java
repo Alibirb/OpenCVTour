@@ -1,17 +1,24 @@
 package alicrow.opencvtour;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LruCache;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -24,6 +31,8 @@ import java.util.HashMap;
 public class Utilities {
 
 	private static final String TAG = "Utilities";
+
+	public static final int REQUEST_IMAGE_CAPTURE = 1;
 
 	private static final LruCache<String, Bitmap> _bitmap_cache = new LruCache<>(64);
 
@@ -231,6 +240,35 @@ public class Utilities {
 	public static int dp_to_px(float dp) {
 		final float scale = Resources.getSystem().getDisplayMetrics().density;
 		return (int)( dp * scale + 0.5f);
+	}
+
+	public static Uri createImageFile() throws IOException {
+		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+		String image_filename = "JPEG_" + timestamp + "_";
+		return Uri.fromFile(File.createTempFile(image_filename, ".jpg", Tour.getTourDirectory()));
+	}
+
+	/// TODO: add option to make the image temporary
+	public static Uri takePicture(Activity activity) {
+		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+		Uri photo_uri = null;
+		if (intent.resolveActivity(activity.getPackageManager()) != null) {
+			// Create a file to save the photo to
+			try {
+				photo_uri = Utilities.createImageFile();
+			} catch (IOException ex) {
+				Log.e(TAG, ex.toString());
+			}
+
+			if (photo_uri != null) {
+				intent.putExtra(MediaStore.EXTRA_OUTPUT, photo_uri);
+				activity.startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
+				Log.i(TAG, "started image capture request");
+			} else {
+				Log.e(TAG, "failed to create file for image");
+			}
+		}
+		return photo_uri;
 	}
 
 }

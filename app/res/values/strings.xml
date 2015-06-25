@@ -8,4 +8,14 @@
 	<string name="title_activity_follow_tour">FollowTourActivity</string>
 	<string name="title_activity_tour_list">TourListActivity</string>
 	<string name="done">Done</string>
+	
+	<!-- Thanh's stuff -->
+    <string name="menu_take_photo">Take photo</string>
+    <string name="photo_error_message">Failed to save photo</string>
+    <string name="menu_detect_object">Detect object</string>
+    <string name="menu_add_to_lib">Add to lib</string>
+    <string name="menu_load_library">Load library</string>
+    <string name="title_activity_display_result">DisplayResultActivity</string>
+    <string name="hello_world">Hello world!</string>
+	
 </resources>

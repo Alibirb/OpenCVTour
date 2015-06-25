@@ -152,7 +152,7 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 	}
 
 	private void addNewTourItem() {
-		_tour.getTourItems().add(new TourItem());
+		_tour.addNewTourItem();
 		_adapter.notifyDataSetChanged();
 		editTourItem(_tour.getTourItems().size() - 1);
 	}

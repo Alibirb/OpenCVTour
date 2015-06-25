@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.os.Bundle;
 import android.app.ActionBar;
 import android.support.annotation.NonNull;
@@ -24,11 +23,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 
 /*
@@ -254,8 +249,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		return super.onOptionsItemSelected(item);
 	}
 
-	private void applyChanges()
-	{
+	private void applyChanges() {
 		_tour_item.setName(((EditText) findViewById(R.id.edit_tour_item_name)).getText().toString());
 		_tour_item.setDescription(((EditText) findViewById(R.id.edit_tour_item_description)).getText().toString());
 		_tour_item.setDirections(((EditText) findViewById(R.id.edit_tour_item_directions)).getText().toString());
@@ -272,7 +266,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.image_picker:
-				takePicture();
+				_photo_uri = Utilities.takePicture(this);
 				break;
 
 			case R.id.get_current_gps_location: {
@@ -292,40 +286,9 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		}
 	}
 
-	private void takePicture() {
-		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		if (intent.resolveActivity(getPackageManager()) != null) {
-			// Create a file to save the photo to
-			_photo_uri = null;
-			try {
-				_photo_uri = createImageFile();
-			} catch (IOException ex) {
-				Toast.makeText(this, ex.toString(), Toast.LENGTH_SHORT).show();
-				Log.e(TAG, ex.toString());
-			}
-
-			if (_photo_uri != null) {
-				intent.putExtra(MediaStore.EXTRA_OUTPUT, _photo_uri);
-				startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
-			} else {
-				Log.e(TAG, "failed to create file for image");
-			}
-		}
-	}
-
-	private Uri createImageFile() throws IOException {
-		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-		String image_filename = "JPEG_" + timestamp + "_";
-		return Uri.fromFile(File.createTempFile(
-				image_filename,  /* prefix */
-				".jpg",         /* suffix */
-				Tour.getTourDirectory() /* directory */
-		));
-	}
-
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.REQUEST_IMAGE_CAPTURE) {
+		if(resultCode == Activity.RESULT_OK && requestCode == Utilities.REQUEST_IMAGE_CAPTURE) {
 			_tour_item.addImageFilename(_photo_uri.getPath());
 			Log.i(TAG, "saved photo as " + _photo_uri.toString());
 			GridView gridview = (GridView) findViewById(R.id.gridview);

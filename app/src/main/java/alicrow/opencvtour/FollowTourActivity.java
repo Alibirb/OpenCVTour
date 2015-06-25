@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -25,6 +26,8 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	private boolean _service_is_bound = false;
 	private int _next_item_index = 0;
 
+	private Uri _photo_uri;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -37,6 +40,9 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		if(savedInstanceState != null) {
 			if(savedInstanceState.containsKey("next_item_index"))
 				_next_item_index = savedInstanceState.getInt("next_item_index");
+			if (savedInstanceState.containsKey("_photo_uri")) {
+				_photo_uri = Uri.parse(savedInstanceState.getString("_photo_uri"));
+			}
 		}
 
 		if(getNextTourItem() != null)
@@ -66,7 +72,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.find_closest_tour_item:
-				updateDisplay(_connection.getService().getCurrentLocation());
+				_photo_uri = Utilities.takePicture(this);
 				break;
 		}
 	}
@@ -94,9 +100,13 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		super.onSaveInstanceState(outState);
 
 		outState.putInt("next_item_index", _next_item_index);
+
+		if(_photo_uri != null)
+			outState.putString("_photo_uri", _photo_uri.toString());
 	}
 
-	private void updateDisplay(Location current_location) {
+	private void updateDisplay() {
+		Location current_location = _connection.getService().getCurrentLocation();
 		if (current_location == null) {
 			Log.e(TAG, "got null current location");
 			((TextView) findViewById(R.id.current_location)).setText("Current location: unknown (Ensure that location is enabled on your device)");
@@ -106,7 +116,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		((TextView) findViewById(R.id.current_location)).setText("Current location: " + current_location.getLatitude() + ", " + current_location.getLongitude() + ", accuracy: " + current_location.getAccuracy() + " meters");
 
-		TourItem closest_item = findClosestTourItem(current_location);
+		TourItem closest_item = Tour.getCurrentTour().getTourItem(Tour.getCurrentTour().getDetector().identifyObject(_photo_uri.getPath()));
 
 		if(closest_item != null)
 			Log.i(TAG, "closest item is named " + closest_item.getName());
@@ -140,7 +150,10 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		findViewById(R.id.directions).setVisibility(View.VISIBLE);
 
 		((TextView) findViewById(R.id.closest_tour_item_name)).setText(item.getName());
-		((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + item.getLocation().getLatitude() + ", " + item.getLocation().getLongitude());
+		if(item.getLocation() == null)
+			findViewById(R.id.closest_tour_item_location).setVisibility(View.INVISIBLE);
+		else
+			((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + item.getLocation().getLatitude() + ", " + item.getLocation().getLongitude());
 		((TextView) findViewById(R.id.closest_tour_item_description)).setText(item.getDescription());
 
 		if(item.hasMainImage()) {
@@ -173,6 +186,13 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		if(Tour.getCurrentTour().getTourItems().size() == _next_item_index)
 			return null;    /// Tour is finished
 		return Tour.getCurrentTour().getTourItems().get(_next_item_index);
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if(resultCode == Activity.RESULT_OK && requestCode == Utilities.REQUEST_IMAGE_CAPTURE) {
+			updateDisplay();
+		}
 	}
 
 }

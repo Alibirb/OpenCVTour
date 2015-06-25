@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.photodetector.MainActivity" >
+
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="@string/action_settings"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/menu_take_photo"
+        android:title="@string/menu_take_photo"
+        android:showAsAction="always|withText"/>
+	<item
+        android:id="@+id/menu_detect_object"
+        android:title="@string/menu_detect_object"
+        android:showAsAction="ifRoom|withText"/>
+	<item
+        android:id="@+id/menu_load_library"
+        android:title="@string/menu_load_library"
+        android:showAsAction="ifRoom|withText"/>
+</menu>

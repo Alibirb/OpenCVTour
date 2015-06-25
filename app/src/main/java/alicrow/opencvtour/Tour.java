@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.thanh.photodetector.ImageDetector;
+
 /**
  * Created by daniel on 5/26/15.
  *
@@ -28,6 +30,7 @@ public class Tour {
 	private boolean _gps_enabled;
 	private boolean _enforce_order;   /// indicates if the TourItems must be visited in sequence
 	private String _name;
+	private ImageDetector _detector = new ImageDetector();
 
 	public static Tour getCurrentTour() {
 		if(_currentTour == null)
@@ -108,7 +111,7 @@ public class Tour {
 		_tour_items.clear();
 		for(Map<String,Object> map : (ArrayList<Map<String,Object>>) data.get("items")) {
 			try {
-				_tour_items.add(new TourItem(map));
+				_tour_items.add(new TourItem(this, map));
 			} catch (Exception e) {
 				Log.e(TAG, e.toString());
 			}
@@ -140,12 +143,28 @@ public class Tour {
 		}
 	}
 
+	public ImageDetector getDetector() {
+		return _detector;
+	}
+
 	public String toString() {
 		return _name;
 	}
 
 	public ArrayList<TourItem> getTourItems() {
 		return _tour_items;
+	}
+	public TourItem getTourItem(long id) {
+		for(TourItem item : _tour_items) {
+			if(item.getId() == id)
+				return item;
+		}
+		return null;
+	}
+	public TourItem addNewTourItem() {
+		TourItem item = new TourItem(this);
+		_tour_items.add(item);
+		return item;
 	}
 
 	public void setGpsEnabled(boolean enabled) {

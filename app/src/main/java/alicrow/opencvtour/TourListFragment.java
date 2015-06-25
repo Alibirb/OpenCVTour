@@ -12,6 +12,10 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+
 import java.util.List;
 
 
@@ -23,6 +27,24 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 
 	private RecyclerView _recycler_view;
 
+
+	private BaseLoaderCallback _loader_callback = new BaseLoaderCallback(getActivity()) {
+		@Override
+		public void onManagerConnected(int status) {
+			switch (status) {
+				case LoaderCallbackInterface.SUCCESS:
+				{
+					Log.i(TAG, "OpenCV loaded successfully");
+					_recycler_view.setAdapter(new TourAdapter(Tour.getTours()));    /// TourItem initialization involves extracting OpenCV features, so we had to wait for OpenCV to start up first.
+				} break;
+				default:
+				{
+					super.onManagerConnected(status);
+				} break;
+			}
+		}
+	};
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.fragment_tour_list, container, false);
@@ -33,7 +55,7 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 		super.onActivityCreated(savedInstanceState);
 
 		_recycler_view = (RecyclerView) getActivity().findViewById(R.id.recycler_view);
-		_recycler_view.setAdapter(new TourAdapter(Tour.getTours()));
+		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, getActivity(), _loader_callback);
 		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
 		getActivity().findViewById(R.id.add_tour).setOnClickListener(this);

@@ -5,3 +5,7 @@
 /captures
 .idea
 *.iml
+/OpenCV-android-sdk
+AndroidSdk
+*/lint.xml
+*/build

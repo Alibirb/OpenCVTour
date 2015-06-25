@@ -22,18 +22,21 @@ public class TourItem {
 	private ArrayList<String> _image_filenames = new ArrayList<>();
 	/// TODO: audio file
 	private Location _location;
+	private Tour _tour;
 
 	private final long _unique_id;
 	private static long _next_id = 0;
 
-	public TourItem() {
+	public TourItem(Tour tour) {
+		_tour = tour;
 		_name = "";
 		_description = "";
 		_directions = "";
 		_unique_id = _next_id;
 		++_next_id;
 	}
-	public TourItem(Map<String,Object> data) {
+	public TourItem(Tour tour, Map<String,Object> data) {
+		_tour = tour;
 		_unique_id = _next_id;
 		++_next_id;
 		loadFromMap(data);
@@ -139,6 +142,7 @@ public class TourItem {
 			/// make this the main image if we don't have a main image set yet
 			setMainImage(filename);
 		}
+		_tour.getDetector().addToLibrary(filename, _unique_id);
 	}
 	public void removeImage(String filename) {
 		_image_filenames.remove(filename);
@@ -149,6 +153,7 @@ public class TourItem {
 			else
 				_main_image_filename = _image_filenames.get(0);
 		}
+		/// FIXME: Needs to remove the image from the ImageDetector
 	}
 
 	public Location getLocation() {
