@@ -7,7 +7,6 @@ import android.net.Uri;
 public class TrainingImage {
 	private String path_id;
 	private long tour_id;
-	private Mat image;
 	private Mat descriptors;
 	private Uri uri;
 	
@@ -18,17 +17,11 @@ public class TrainingImage {
 		path_id = image_path;
 	}
 	
-	public TrainingImage(String image_path, long tour_item_id, 
-			Mat	given_image, Mat given_descriptors)
+	public TrainingImage(String image_path, long tour_item_id, Mat given_descriptors)
 	{
 		path_id = image_path;
 		tour_id = tour_item_id;
-		image = given_image;
 		descriptors = given_descriptors;
-	}
-	
-	public void setImage(Mat new_image){
-		image = new_image;
 	}
 	
 	public void setPathID(String newPath){
@@ -45,10 +38,6 @@ public class TrainingImage {
 	
 	public void setDescriptors(Mat descrpt){
 		descriptors=descrpt;
-	}
-	
-	public Mat image(){
-		return image;
 	}
 	
 	public String pathID(){

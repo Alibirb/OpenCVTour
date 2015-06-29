@@ -52,9 +52,13 @@ public class Tour {
 		_tours = new ArrayList<>();
 
 		for(File file : getTourDirectory().listFiles()) {
-			if(file.isFile() && file.getName().endsWith(".yaml")) {
-				Log.i(TAG, "loading tour from file '" + file.toString() + "'");
-				_tours.add(new Tour(file));
+			if(file.isFile() && file.getName().endsWith(".yaml") && !file.getName().endsWith(".descriptors.yaml")) {
+				try {
+					Log.i(TAG, "loading tour from file '" + file.toString() + "'");
+					_tours.add(new Tour(file));
+				} catch(Exception e) {
+					Log.e(TAG, e.toString());
+				}
 			}
 		}
 	}
@@ -130,6 +134,7 @@ public class Tour {
 		} catch (IOException e) {
 			Log.e(TAG, e.toString());
 		}
+		_detector.saveImageDescriptors();
 	}
 	public void loadFromFile(File file) {
 		try {
