@@ -1,1 +1,2 @@
-include ':app', ':openCVLibrary300'
+include ':app', ':openCVLibrary300', ':library'
+project(':library').projectDir = new File('android-advancedrecyclerview/library')

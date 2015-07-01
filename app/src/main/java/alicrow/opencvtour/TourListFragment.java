@@ -12,6 +12,8 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.eyeem.recyclerviewtools.adapter.WrapAdapter;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
@@ -26,24 +28,8 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 	private static final String TAG = "TourListFragment";
 
 	private RecyclerView _recycler_view;
+	private TourAdapter _adapter;
 
-
-	private BaseLoaderCallback _loader_callback = new BaseLoaderCallback(getActivity()) {
-		@Override
-		public void onManagerConnected(int status) {
-			switch (status) {
-				case LoaderCallbackInterface.SUCCESS:
-				{
-					Log.i(TAG, "OpenCV loaded successfully");
-					_recycler_view.setAdapter(new TourAdapter(Tour.getTours()));    /// TourItem initialization involves extracting OpenCV features, so we had to wait for OpenCV to start up first.
-				} break;
-				default:
-				{
-					super.onManagerConnected(status);
-				} break;
-			}
-		}
-	};
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -54,28 +40,47 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
+		BaseLoaderCallback _loader_callback = new BaseLoaderCallback(getActivity()) {
+			@Override
+			public void onManagerConnected(int status) {
+				switch (status) {
+					case LoaderCallbackInterface.SUCCESS:
+					{
+						Log.i(TAG, "OpenCV loaded successfully");
+						_adapter = new TourAdapter(Tour.getTours());
+						WrapAdapter wrap_adapter = new WrapAdapter(_adapter);
+						wrap_adapter.addFooter( getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view,   false));
+						_recycler_view.setAdapter(wrap_adapter);
+					} break;
+					default:
+					{
+						super.onManagerConnected(status);
+					} break;
+				}
+			}
+		};
+
 		_recycler_view = (RecyclerView) getActivity().findViewById(R.id.recycler_view);
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, getActivity(), _loader_callback);
 		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-		getActivity().findViewById(R.id.add_tour).setOnClickListener(this);
+		getActivity().findViewById(R.id.fab).setOnClickListener(this);
 	}
 
 	@Override
 	public void onClick(View v) {
 		switch(v.getId()) {
-			case R.id.add_tour:
+			case R.id.fab:
 				Tour.setSelectedTour(Tour.addNewTour());
 				startActivityForResult(new Intent(getActivity(), EditTourActivity.class), EditTourActivity.EDIT_TOUR_REQUEST);
 				break;
-			/// TODO: "delete tour" button
 		}
 	}
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(requestCode == EditTourActivity.EDIT_TOUR_REQUEST) {
-			_recycler_view.getAdapter().notifyDataSetChanged();
+			_adapter.notifyDataSetChanged();
 		}
 	}
 
@@ -94,7 +99,7 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 
 			@Override
 			public void onClick(View view) {
-				int position = getPosition();
+				int position = getAdapterPosition();
 				Tour.setSelectedTour(Tour.getTours().get(position));
 				switch(view.getId()) {
 					case R.id.edit_tour:

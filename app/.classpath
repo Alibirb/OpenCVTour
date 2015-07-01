@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="/OpenCV Library - 3.0.0/bin/opencv library - 3.0.0.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/android-support-v7-appcompat"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/recyclerview"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/main"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

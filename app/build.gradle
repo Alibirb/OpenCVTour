@@ -33,8 +33,10 @@ android {
 
 dependencies {
 	compile 'com.android.support:appcompat-v7:22.2.0'
-	compile 'com.android.support:recyclerview-v7:21.0.0'
+	compile 'com.android.support:recyclerview-v7:22.+'
+	compile 'com.android.support:design:22.2.0'
 	compile files('libs/snakeyaml-1.15-SNAPSHOT-android.jar')
 	compile 'com.google.android.gms:play-services-location:7.5.0'
 	compile project(':openCVLibrary300')
+	compile project(':library')
 }

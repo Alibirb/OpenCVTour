@@ -1,19 +1,29 @@
 package alicrow.opencvtour;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.app.Fragment;
+import android.graphics.drawable.NinePatchDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.eyeem.recyclerviewtools.adapter.WrapAdapter;
+import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.animator.RefactoredDefaultItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
+import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableItemViewHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,61 +32,132 @@ import java.util.List;
 /**
  * Fragment to display the list of TourItems in a Tour.
  */
-public class TourItemListFragment extends Fragment implements View.OnClickListener, AdapterView.OnItemClickListener {
+public class TourItemListFragment extends Fragment implements View.OnClickListener, com.eyeem.recyclerviewtools.adapter.OnItemClickListenerDetector.OnItemClickListener {
 	private static final String TAG = "TourItemListFragment";
 
 	private Tour _tour;
-	private ListView _list_view;
-	private TourItemArrayAdapter _adapter;
+	private TourItemAdapter _adapter;
+	private RecyclerView _recycler_view;
 
 	/**
 	 * Adapter to display TourItems in our list
 	 */
-	public class TourItemArrayAdapter extends ArrayAdapter<TourItem>
+	public class TourItemAdapter extends RecyclerView.Adapter<TourItemAdapter.ViewHolder> implements DraggableItemAdapter<TourItemAdapter.ViewHolder>
 	{
-		private final Context _context;
 		private final List<TourItem> _items;
 
 		final int INVALID_ID = -1;
 
-		public TourItemArrayAdapter(Context context, List<TourItem> items) {
-			super(context, -1, items);
-			_context = context;
+		public class ViewHolder extends AbstractDraggableItemViewHolder implements View.OnClickListener {
+			public final TextView _name;
+			public final TextView _description;
+			public final ImageView _thumbnail;
+			public final RelativeLayout _container;
+
+			public ViewHolder(RelativeLayout v) {
+				super(v);
+				_name = (TextView) v.findViewById(R.id.tour_item_name);
+				_description = (TextView) v.findViewById(R.id.tour_item_description);
+				_thumbnail = (ImageView) v.findViewById(R.id.tour_item_thumbnail);
+				_container = (RelativeLayout) v.findViewById(R.id.container);
+
+				v.findViewById(R.id.delete_tour_item).setOnClickListener(this);
+			}
+
+			@Override
+			public void onClick(View view) {
+				int position = getAdapterPosition();
+				switch(view.getId()) {
+					case R.id.delete_tour_item:
+						if (position != RecyclerView.NO_POSITION) {
+							_adapter.getList().remove(position);
+							_adapter.notifyDataSetChanged();
+						}
+						break;
+				}
+			}
+
+		}
+
+		public TourItemAdapter(List<TourItem> items) {
 			_items = items;
+			setHasStableIds(true);
 		}
 
 		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
+		public void onMoveItem(int fromPosition, int toPosition) {
+			Log.d(TAG, "onMoveItem(fromPosition = " + fromPosition + ", toPosition = " + toPosition + ")");
+
+			if (fromPosition == toPosition)
+				return;
+
+			TourItem removed = _items.remove(fromPosition);
+			_items.add(toPosition, removed);
+
+			notifyItemMoved(fromPosition, toPosition);
+		}
+
+		@Override
+		public boolean onCheckCanStartDrag(ViewHolder holder, int position, int x, int y) {
+			return true;
+		}
+
+		@Override
+		public ItemDraggableRange onGetItemDraggableRange(ViewHolder holder, int position) {
+			// no drag-sortable range specified
+			return null;
+		}
+
+
+		// Create new views (invoked by the layout manager)
+		@Override
+		public TourItemAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+			// create a new view
+			View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.tour_item_line, parent, false);
+			// set the view's size, margins, paddings and layout parameters
+
+			return new ViewHolder((RelativeLayout) v);
+		}
+
+		// Replace the contents of a view (invoked by the layout manager)
+		@Override
+		public void onBindViewHolder(ViewHolder holder, int position) {
 			TourItem item = _items.get(position);
 
-			/// Create row_view, or recycle an existing view if possible
-			View row_view;
-			if(convertView == null) {
-				Log.v(TAG, "creating new view for position " + position);
-				LayoutInflater inflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				row_view = inflater.inflate(R.layout.tour_item_line, parent, false);
-			} else {
-				Log.v(TAG, "recycling existing view for position " + position);
-				row_view = convertView;
-			}
-
-			((TextView) row_view.findViewById(R.id.tour_item_name)).setText(item.getName());
-			((TextView) row_view.findViewById(R.id.tour_item_description)).setText(item.getDescription());
+			holder._name.setText(item.getName());
+			holder._description.setText(item.getDescription());
 			if(item.getDescription().equals(""))
-				row_view.findViewById(R.id.tour_item_description).setVisibility(View.GONE);
+				holder._description.setVisibility(View.GONE);
 			else
-				row_view.findViewById(R.id.tour_item_description).setVisibility(View.VISIBLE);
+				holder._description.setVisibility(View.VISIBLE);
 
 			if(item.hasMainImage()) {
 				String image_filename = item.getMainImageFilename();
-				ImageView image_view = (ImageView) row_view.findViewById(R.id.tour_item_thumbnail);
+				ImageView image_view = holder._thumbnail;
 				Utilities.loadBitmap(image_view, image_filename, Utilities.dp_to_px(40), Utilities.dp_to_px(40));
 			} else
-				((ImageView) row_view.findViewById(R.id.tour_item_thumbnail)).setImageResource(R.drawable.default_thumbnail);
+				holder._thumbnail.setImageResource(R.drawable.default_thumbnail);
 
-			row_view.findViewById(R.id.delete_tour_item).setOnClickListener(TourItemListFragment.this);
+			// set background resource (target view ID: container)
+			final int dragState = holder.getDragStateFlags();
 
-			return row_view;
+			if (((dragState & RecyclerViewDragDropManager.STATE_FLAG_IS_UPDATED) != 0)) {
+				int bgResId;
+
+				if ((dragState & RecyclerViewDragDropManager.STATE_FLAG_IS_ACTIVE) != 0) {
+					bgResId = R.drawable.bg_item_dragging_active_state;
+				} else if ((dragState & RecyclerViewDragDropManager.STATE_FLAG_DRAGGING) != 0) {
+					bgResId = R.drawable.bg_item_dragging_state;
+				} else {
+					bgResId = R.drawable.bg_item_normal_state;
+				}
+				holder._container.setBackgroundResource(bgResId);
+			}
+		}
+
+		@Override
+		public int getItemCount() {
+			return _items.size();
 		}
 
 		@Override
@@ -84,7 +165,7 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 			if (position < 0 || position >= _items.size()) {
 				return INVALID_ID;
 			}
-			return getItem(position).getId();
+			return _items.get(position).getId();
 		}
 
 		public List<TourItem> getList() {
@@ -98,7 +179,7 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View v = inflater.inflate(R.layout.fragment_tour_item_list, container, false);
 
-		v.findViewById(R.id.add_tour_item).setOnClickListener(this);
+		v.findViewById(R.id.fab).setOnClickListener(this);
 
 		return v;
 	}
@@ -109,33 +190,73 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 
 		_tour = Tour.getCurrentTour();
 
-		_list_view = (ListView) getActivity().findViewById(R.id.list);
+		_recycler_view = (RecyclerView) getActivity().findViewById(R.id.recycler_view);
+		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
 		ArrayList<TourItem> tour_items = _tour.getTourItems();
 
-		/// Set up _list_view to show the items in our list.
-		_adapter = new TourItemArrayAdapter(getActivity(), tour_items);
-		_list_view.setAdapter(_adapter);
+		_adapter = new TourItemAdapter(tour_items);
 
-		_list_view.setOnItemClickListener(this);
+		/// We're using two different RecyclerView adapter libraries, which were not designed to work together. This class provides a WrapAdapter from eyeem's library that also implements DraggableItemAdapter from h6ah4i's library (by passing to the TourItemAdapter that actually handles that stuff).
+		class CrazyWrapAdapter extends WrapAdapter implements DraggableItemAdapter<TourItemAdapter.ViewHolder> {
+
+			public CrazyWrapAdapter(RecyclerView.Adapter wrappedAdapter) {
+				super(wrappedAdapter);
+			}
+
+			@Override public void onMoveItem(int fromPosition, int toPosition) {
+				((DraggableItemAdapter) wrapped).onMoveItem(fromPosition, toPosition);
+			}
+
+			@Override public boolean onCheckCanStartDrag(TourItemAdapter.ViewHolder holder, int position, int x, int y) {
+				return ((DraggableItemAdapter) wrapped).onCheckCanStartDrag(holder, position, x, y);
+			}
+
+			@Override public ItemDraggableRange onGetItemDraggableRange(TourItemAdapter.ViewHolder holder, int position) {
+				return ((DraggableItemAdapter) wrapped).onGetItemDraggableRange(holder, position);
+			}
+		}
+
+		CrazyWrapAdapter wrap_adapter = new CrazyWrapAdapter(_adapter);
+		wrap_adapter.setOnItemClickListener(_recycler_view, this);
+		wrap_adapter.addFooter(getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view, false));
+
+
+		/// Stuff for drag and drop functionality:
+
+		RecyclerViewDragDropManager drag_drop_manager = new RecyclerViewDragDropManager();
+		drag_drop_manager.setInitiateOnLongPress(true);
+		//noinspection deprecation
+		drag_drop_manager.setDraggingItemShadowDrawable((NinePatchDrawable) getResources().getDrawable(R.drawable.material_shadow_z3));
+
+		RecyclerView.Adapter drag_drop_adapter = drag_drop_manager.createWrappedAdapter(wrap_adapter); // wrap for dragging
+
+		final GeneralItemAnimator animator = new RefactoredDefaultItemAnimator();
+
+		_recycler_view.setAdapter(drag_drop_adapter);  // requires *wrapped* adapter
+		_recycler_view.setItemAnimator(animator);
+
+		// Shadow for pre-Lollipop devices (Lollipop has built-in elevation stuff)
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+			//noinspection deprecation
+			_recycler_view.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) getResources().getDrawable(R.drawable.material_shadow_z1)));
+		}
+
+		drag_drop_manager.attachRecyclerView(_recycler_view);
+
 	}
 
 	@Override
 	public void onClick(View v) {
 		switch(v.getId()) {
-			case R.id.add_tour_item:
+			case R.id.fab:
 				addNewTourItem();
 				break;
-			case R.id.delete_tour_item: {
-				final int position = _list_view.getPositionForView(v);
-				if (position != ListView.INVALID_POSITION) {
-					_adapter.remove(_adapter.getItem(position));
-				}
-			}
 		}
 	}
 
-	public void onItemClick(AdapterView parent, View v, int position, long id) {
+	@Override
+	public void onItemClick(RecyclerView parent, View v, int position, long id) {
 		editTourItem(position);
 	}
 
