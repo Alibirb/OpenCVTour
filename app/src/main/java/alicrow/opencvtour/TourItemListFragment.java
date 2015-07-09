@@ -132,9 +132,9 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 				holder._description.setVisibility(View.VISIBLE);
 
 			if(item.hasMainImage()) {
-				String image_filename = item.getMainImageFilename();
+				String image_filepath = item.getMainImageFilepath();
 				ImageView image_view = holder._thumbnail;
-				Utilities.loadBitmap(image_view, image_filename, Utilities.dp_to_px(40), Utilities.dp_to_px(40));
+				Utilities.loadBitmap(image_view, image_filepath, Utilities.dp_to_px(40), Utilities.dp_to_px(40));
 			} else
 				holder._thumbnail.setImageResource(R.drawable.default_thumbnail);
 

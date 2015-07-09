@@ -70,11 +70,11 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		}
 
 		public int getCount() {
-			return _item.getImageFilenames().size();
+			return _item.getImageFilepaths().size();
 		}
 
 		public Object getItem(int position) {
-			return _item.getImageFilenames().get(position);
+			return _item.getImageFilepaths().get(position);
 		}
 
 		public long getItemId(int position) {
@@ -97,7 +97,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 				image_view = (ImageView) frame_layout.findViewById(R.id.image);
 			}
 
-			String image_filename = _item.getImageFilenames().get(position);
+			String image_filename = _item.getImageFilepaths().get(position);
 			int column_width = ((GridView) parent).getRequestedColumnWidth();
 			Utilities.loadBitmap(image_view, image_filename, column_width, column_width);
 
@@ -108,9 +108,9 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	@Override
 	public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
 		if(checked)
-			_images_selected.add(_tour_item.getImageFilenames().get(position));
+			_images_selected.add(_tour_item.getImageFilepaths().get(position));
 		else
-			_images_selected.remove(_tour_item.getImageFilenames().get(position));
+			_images_selected.remove(_tour_item.getImageFilepaths().get(position));
 
 		/// If only a single image is selected, the user can set that as the main image, so we add that option to the contextual action bar
 		if(_images_selected.size() == 1)
@@ -266,7 +266,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.image_picker:
-				_photo_uri = Utilities.takePicture(this);
+				_photo_uri = Utilities.takePicture(this, false);
 				break;
 
 			case R.id.get_current_gps_location: {
@@ -289,7 +289,7 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(resultCode == Activity.RESULT_OK && requestCode == Utilities.REQUEST_IMAGE_CAPTURE) {
-			_tour_item.addImageFilename(_photo_uri.getPath());
+			_tour_item.addImageFilepath(_photo_uri.getPath());
 			Log.i(TAG, "saved photo as " + _photo_uri.toString());
 			GridView gridview = (GridView) findViewById(R.id.gridview);
 			((TourItemImageAdapter) gridview.getAdapter()).notifyDataSetChanged();

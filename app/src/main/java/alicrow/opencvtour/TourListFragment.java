@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -47,9 +48,9 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 					case LoaderCallbackInterface.SUCCESS:
 					{
 						Log.i(TAG, "OpenCV loaded successfully");
-						_adapter = new TourAdapter(Tour.getTours());
+						_adapter = new TourAdapter(Tour.getTours(getActivity()));
 						WrapAdapter wrap_adapter = new WrapAdapter(_adapter);
-						wrap_adapter.addFooter( getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view,   false));
+						wrap_adapter.addFooter(getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view, false));
 						_recycler_view.setAdapter(wrap_adapter);
 					} break;
 					default:
@@ -89,18 +90,22 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 
 		public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 			public final TextView _text_view;
+			public final ImageView _edit_button;
 
 			public ViewHolder(RelativeLayout v) {
 				super(v);
+
 				_text_view = (TextView) v.findViewById(R.id.tour_name);
+				_edit_button = (ImageView) v.findViewById(R.id.edit_tour);
+
 				_text_view.setOnClickListener(this);
-				v.findViewById(R.id.edit_tour).setOnClickListener(this);
+				_edit_button.setOnClickListener(this);
 			}
 
 			@Override
 			public void onClick(View view) {
 				int position = getAdapterPosition();
-				Tour.setSelectedTour(Tour.getTours().get(position));
+				Tour.setSelectedTour(_tours.get(position));
 				switch(view.getId()) {
 					case R.id.edit_tour:
 						startActivity(new Intent(getActivity(), EditTourActivity.class));
@@ -133,6 +138,11 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 			// - get element from your dataset at this position
 			// - replace the contents of the view with that element
 			holder._text_view.setText(_tours.get(position).getName());
+			if(!_tours.get(position).getEditable()) {
+				/// Disable the edit button
+				holder._edit_button.setVisibility(View.GONE);
+				holder._edit_button.setClickable(false);
+			}
 		}
 
 		// Return the size of your dataset (invoked by the layout manager)

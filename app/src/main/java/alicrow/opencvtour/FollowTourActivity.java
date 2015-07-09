@@ -1,9 +1,10 @@
 package alicrow.opencvtour;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
+import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,9 +13,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 
 /**
  * Activity to follow a Tour.
@@ -29,8 +36,70 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	private Uri _photo_uri;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		if(getIntent().getData() != null) {
+			/// FollowTourActivity was launched directly, with a Tour archive. Must initialize OpenCV and load the Tour.
+
+			OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, new BaseLoaderCallback(this) {
+				@Override
+				public void onManagerConnected(int status) {
+					switch (status) {
+						case LoaderCallbackInterface.SUCCESS: {
+							Log.i(TAG, "OpenCV loaded successfully");
+
+							Uri data = getIntent().getData();
+							String scheme = data.getScheme();
+							File extracted_folder = null;
+							if(ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+								/// content uri
+								try {
+									/// Try to retrieve the filename so we know what to name our extracted folder.
+									String folder_name;
+									Cursor cursor = getContentResolver().query(data, new String[]{"_display_name"}, null, null, null);
+									cursor.moveToFirst();
+									int nameIndex = cursor.getColumnIndex("_display_name");
+									if (nameIndex >= 0) {
+										folder_name = cursor.getString(nameIndex);
+									} else {
+										folder_name = "imported-folder.zip.tour";
+									}
+									cursor.close();
+
+									folder_name = folder_name.substring(0, folder_name.length() - ".zip.tour".length());
+									extracted_folder = new File(Tour.getImportedToursDirectory(FollowTourActivity.this), folder_name);
+									Utilities.extractFolder(getContentResolver().openInputStream(data), extracted_folder.getPath());
+								} catch(FileNotFoundException ex) {
+									Log.e(TAG, ex.getMessage());
+									/// Import failed. Exit the activity.
+									FollowTourActivity.this.finish();
+								}
+							} else {
+								/// regular file uri
+								String filepath = data.getPath();
+								String folder_name = data.getLastPathSegment();
+								folder_name = folder_name.substring(0, folder_name.length() - ".zip.tour".length());
+								extracted_folder = new File(Tour.getImportedToursDirectory(FollowTourActivity.this), folder_name);
+								Utilities.extractFolder(filepath, extracted_folder.getPath());
+							}
+							Tour.setSelectedTour(new Tour(new File(extracted_folder, "tour.yaml")));
+							load(savedInstanceState);
+							break;
+						}
+						default: {
+							super.onManagerConnected(status);
+							break;
+						}
+					}
+				}
+			});
+		} else
+			load(savedInstanceState);
+	}
+
+
+	private void load(Bundle savedInstanceState) {
 		setContentView(R.layout.activity_follow_tour);
 
 		findViewById(R.id.find_closest_tour_item).setOnClickListener(this);
@@ -72,7 +141,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.find_closest_tour_item:
-				_photo_uri = Utilities.takePicture(this);
+				_photo_uri = Utilities.takePicture(this, true);
 				break;
 		}
 	}
@@ -127,7 +196,6 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 			findViewById(R.id.closest_tour_item_name).setVisibility(View.INVISIBLE);
 			findViewById(R.id.closest_tour_item_location).setVisibility(View.INVISIBLE);
 			findViewById(R.id.closest_tour_item_description).setVisibility(View.INVISIBLE);
-			findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
 		}
 	}
 
@@ -155,19 +223,6 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		else
 			((TextView) findViewById(R.id.closest_tour_item_location)).setText("location: " + item.getLocation().getLatitude() + ", " + item.getLocation().getLongitude());
 		((TextView) findViewById(R.id.closest_tour_item_description)).setText(item.getDescription());
-
-		if(item.hasMainImage()) {
-			/// display a picture of the TourItem, scaled to fit available space
-			ImageView item_picture = (ImageView) findViewById(R.id.closest_tour_item_picture);
-			item_picture.setVisibility(View.VISIBLE);
-			String filepath = item.getMainImageFilename();
-			BitmapFactory.Options bounds = Utilities.getBitmapBounds(filepath);
-			int width = item_picture.getWidth();
-			int height = width * (bounds.outHeight / bounds.outWidth);
-			Utilities.loadBitmap(item_picture, filepath, width, height);
-		} else {
-			findViewById(R.id.closest_tour_item_picture).setVisibility(View.INVISIBLE);
-		}
 
 		_next_item_index = Tour.getCurrentTour().getTourItems().indexOf(item) + 1;
 		if(getNextTourItem() == null) {

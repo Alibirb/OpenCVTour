@@ -1,5 +1,6 @@
 package alicrow.opencvtour;
 
+import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
@@ -24,13 +25,16 @@ public class Tour {
 	private static final String TAG = "Tour";
 	private static Tour _currentTour;
 	private static ArrayList<Tour> _tours;
-	private static File _tour_directory;  /// directory to save our Tours in
+	private static File _tours_directory;  /// directory to save our Tours in
+	private static File _imported_tours_directory;
 
 	private ArrayList<TourItem> _tour_items;
 	private boolean _gps_enabled;
 	private boolean _enforce_order;   /// indicates if the TourItems must be visited in sequence
 	private String _name;
 	private ImageDetector _detector = new ImageDetector();
+	private File _directory;
+	private boolean _editable = true;
 
 	public static Tour getCurrentTour() {
 		if(_currentTour == null)
@@ -41,21 +45,52 @@ public class Tour {
 		_currentTour = tour;
 	}
 
-	public static ArrayList<Tour> getTours() {
+	public static ArrayList<Tour> getTours(Context context) {
 		if(_tours == null)
-			loadTours();
+			loadTours(context);
 
 		return _tours;
 	}
 
-	private static void loadTours() {
+	private static void loadTours(Context context) {
 		_tours = new ArrayList<>();
 
-		for(File file : getTourDirectory().listFiles()) {
-			if(file.isFile() && file.getName().endsWith(".yaml") && !file.getName().endsWith(".descriptors.yaml")) {
+		if(hasOldToursDirectory())
+			for(File tour_file : getOldToursDirectory().listFiles()) {
+				if(tour_file.isFile() && tour_file.getName().endsWith(".yaml") && !tour_file.getName().endsWith(".descriptors.yaml")) {
+					/// Old way that Tours were saved. We'll load it, then save it (in the new manner), then delete the old version.
+					convertFromOldFormat(tour_file, context);
+				}
+			}
+
+		for(File dir : getToursDirectory(context).listFiles()) {
+			if(dir.isDirectory() && !dir.getName().equals("imported")) {
 				try {
-					Log.i(TAG, "loading tour from file '" + file.toString() + "'");
-					_tours.add(new Tour(file));
+					File tour_file = new File(dir, "tour.yaml");
+					if(!tour_file.exists()) {
+						Log.w(TAG, "no tour description file found in directory " + dir);
+						continue;
+					}
+					Log.i(TAG, "loading tour from file '" + tour_file.toString() + "'");
+					_tours.add(new Tour(tour_file));
+				} catch(Exception e) {
+					Log.e(TAG, e.toString());
+				}
+			}
+		}
+		for(File dir : getImportedToursDirectory(context).listFiles()) {
+			if(dir.isDirectory()) {
+				try {
+					File tour_file = new File(dir, "tour.yaml");
+					if(!tour_file.exists()) {
+						Log.w(TAG, "no tour description file found in directory " + dir);
+						continue;
+					}
+
+					Log.i(TAG, "loading tour from file '" + tour_file.toString() + "'");
+					Tour tour = new Tour(tour_file);
+					tour.setEditable(false);    /// imported Tours are only meant to be followed, not edited.
+					_tours.add(tour);
 				} catch(Exception e) {
 					Log.e(TAG, e.toString());
 				}
@@ -69,15 +104,82 @@ public class Tour {
 		return tour;
 	}
 
-	public static File getTourDirectory() {
+	public static File getToursDirectory(Context context) {
 		Log.i(TAG, Environment.getExternalStorageState());
 
-		_tour_directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour");   /// FIXME: "Pictures" isn't a good place for this, but there's no better option here, except DIRECTORY_DOCUMENTS, which is only available starting in Android 4.4
-		if(!_tour_directory.exists())
-			if(!_tour_directory.mkdirs())
-				Log.e(TAG, "failed to create directories to hold Tour info.");
+		if(_tours_directory == null)
+			_tours_directory = context.getExternalFilesDir(null);
 
-		return _tour_directory;
+		return _tours_directory;
+	}
+	public static File getImportedToursDirectory(Context context) {
+		Log.i(TAG, Environment.getExternalStorageState());
+
+		if(_imported_tours_directory == null)
+			_imported_tours_directory = new File(getToursDirectory(context), "imported");
+
+		if(!_imported_tours_directory.exists())
+			_imported_tours_directory.mkdir();
+
+		return _imported_tours_directory;
+	}
+	private static File getOldToursDirectory() {
+		Log.i(TAG, Environment.getExternalStorageState());
+
+		File old_tour_directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour");
+		if(!old_tour_directory.exists())
+			Log.e(TAG, "Old tour directory does not exist");
+
+		return old_tour_directory;
+	}
+	private static boolean hasOldToursDirectory() {
+		Log.i(TAG, Environment.getExternalStorageState());
+
+		return (new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour")).exists();
+	}
+	/// Converts a Tour saved in an old format to the new format
+	private static File convertFromOldFormat(File old_tour_file, Context context) {
+		Log.i(TAG, "converting '" + old_tour_file + "'");
+		try {
+			Yaml yaml = new Yaml();
+			Map<String, Object> tour_data = (Map<String, Object>) yaml.load(new FileReader(old_tour_file));
+			File new_tour_dir = new File(getToursDirectory(context), (String) tour_data.get("name"));
+			new_tour_dir.mkdir();
+
+			for(Map<String,Object> item_data : (ArrayList<Map<String,Object>>) tour_data.get("items")) {
+				/// Move the images inside the new Tour directory, and save only their filenames, not the full path
+
+				if(item_data.containsKey("main_image") && item_data.get("main_image") != null) {
+					String image_path = (String) item_data.get("main_image");
+					item_data.put("main_image", image_path.substring(image_path.lastIndexOf("/") + 1));
+				}
+
+				if(item_data.containsKey("images") && item_data.get("images") != null) {
+					ArrayList<String> new_image_filenames = new ArrayList<>();
+					for(String image_path : (ArrayList<String>) item_data.get("images")) {
+						File old_image_file = new File(image_path);
+						File new_image_file = new File(new_tour_dir, old_image_file.getName());
+						new_image_filenames.add(old_image_file.getName());
+						File old_descriptors_file = new File(image_path +".descriptors.yaml");
+						old_descriptors_file.delete();
+						if (old_image_file.renameTo(new_image_file))
+							Log.i(TAG, "successfully moved image file " + old_image_file);
+						else
+							Log.e(TAG, "failed to rename file " + old_image_file);
+					}
+					item_data.put("images", new_image_filenames);
+				}
+			}
+			File new_tour_file = new File(new_tour_dir, "tour.yaml");
+			FileWriter writer = new FileWriter(new_tour_file);
+			yaml.dump(tour_data, writer);
+			writer.close();
+			old_tour_file.renameTo(new File(old_tour_file.getPath() + ".old"));
+			return new_tour_dir;
+		} catch (IOException e) {
+			Log.e(TAG, e.toString());
+			return null;
+		}
 	}
 
 
@@ -86,8 +188,17 @@ public class Tour {
 		_name = "Unnamed tour";
 	}
 	public Tour(File file) {
+		_directory = file.getParentFile();
 		_tour_items = new ArrayList<>();
 		loadFromFile(file);
+	}
+
+	/// Return a File for the directory this Tour is stored in.
+	public File getDirectory() {
+		if(_directory != null)
+			return _directory;
+		else
+			return new File(_tours_directory, _name);
 	}
 
 	/**
@@ -126,7 +237,10 @@ public class Tour {
 		Map<String, Object> data = saveToMap();
 		Yaml yaml = new Yaml();
 		try {
-			File file = new File(_tour_directory, getName() + ".yaml");
+			File dir = getDirectory();
+			if(!dir.exists())
+				dir.mkdir();
+			File file = new File(dir, "tour.yaml");
 			FileWriter writer = new FileWriter(file);
 			yaml.dump(data, writer);
 			writer.close();
@@ -191,6 +305,13 @@ public class Tour {
 	}
 	public void setEnforceOrder(boolean enforce) {
 		_enforce_order = enforce;
+	}
+
+	public boolean getEditable() {
+		return _editable;
+	}
+	public void setEditable(boolean editable) {
+		_editable = editable;
 	}
 
 }
