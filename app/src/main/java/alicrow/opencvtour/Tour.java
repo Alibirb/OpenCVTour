@@ -78,6 +78,21 @@ public class Tour {
 				}
 			}
 		}
+
+		/// Automatically extract any Tours in the Downloads folder, since we cannot rely on other apps (e.g. email, bluetooth transfer) to open the tour with our app.
+		for(File archive : Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).listFiles()) {
+			if(archive.isFile() && archive.getName().endsWith(".zip.tour")) {
+				String folder_name = archive.getName().substring(0, archive.getName().length() - ".zip.tour".length());
+				File extracted_folder = new File(getImportedToursDirectory(context), folder_name);
+				if(extracted_folder.exists()) {
+					Log.d(TAG, "Already extracted '" + archive.getName() + "'.");
+				} else {
+					Log.i(TAG, "Extracting '" + archive.getName() + "' from Downloads folder");
+					Utilities.extractFolder(archive.getPath(), extracted_folder.getPath());
+				}
+			}
+		}
+
 		for(File dir : getImportedToursDirectory(context).listFiles()) {
 			if(dir.isDirectory()) {
 				try {
