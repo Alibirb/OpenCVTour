@@ -189,6 +189,10 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		if(closest_item != null)
 			Log.i(TAG, "closest item is named " + closest_item.getName());
+		else {
+			Log.i(TAG, "got null TourItem");
+			Toast.makeText(this, "No tour item detected.", Toast.LENGTH_SHORT).show();
+		}
 
 		if(closest_item != null && (!Tour.getCurrentTour().getEnforceOrder() || getNextTourItem() == closest_item)) {
 			displayTourItem(closest_item);

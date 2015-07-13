@@ -17,7 +17,7 @@ Install OpenCV Manager 3.0.0 on your device:
 
 where `<platform>` is the architecture of your device, obtained via `cat /proc/cpuinfo` in adb shell.
 
-### Eclipse only
+### Eclipse users
 
 On Eclipse, you need to create library projects for recyclerview, android-support-v7-appcompat, android-support-design, and google-play-services_lib. See https://developer.android.com/tools/support-library/setup.html#add-library for information on how to do so. You will also need to either copy your Android SDK to the base folder of the repository (renaming it "AndroidSdk") or create a symbolic link to the SDK.
 
