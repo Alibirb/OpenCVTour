@@ -2,6 +2,7 @@ package alicrow.opencvtour;
 
 import android.content.Intent;
 import android.app.Fragment;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import java.io.File;
 
 /**
  * Fragment to edit Tour settings.
@@ -26,6 +28,7 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 		v.findViewById(R.id.enable_gps).setOnClickListener(this);
 		v.findViewById(R.id.enforce_order).setOnClickListener(this);
 		v.findViewById(R.id.save_tour).setOnClickListener(this);
+		v.findViewById(R.id.share_tour).setOnClickListener(this);
 		v.findViewById(R.id.follow_tour).setOnClickListener(this);
 
 		((CheckBox) v.findViewById(R.id.enable_gps)).setChecked(Tour.getCurrentTour().getGpsEnabled());
@@ -53,6 +56,22 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 			case R.id.save_tour: {
 				Tour.getCurrentTour().setName(((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString());
 				Tour.getCurrentTour().saveToFile();
+				break;
+			}
+			case R.id.share_tour: {
+				String tour_name = ((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString();
+				Tour.getCurrentTour().setName(tour_name);
+				Tour.getCurrentTour().saveToFile();
+
+				File archive = new File(getActivity().getExternalCacheDir(), tour_name + ".zip.tour");
+				Utilities.compressFolder(Tour.getCurrentTour().getDirectory().getPath(), archive.getPath(), true);
+
+				Intent intent = new Intent(Intent.ACTION_SEND);
+				intent.setType("application/tour");
+				intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(archive));
+				if(intent.resolveActivity(getActivity().getPackageManager()) != null) {
+					startActivity(Intent.createChooser(intent, null));
+				}
 				break;
 			}
 			case R.id.follow_tour: {

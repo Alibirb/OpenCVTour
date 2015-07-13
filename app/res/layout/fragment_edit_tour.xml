@@ -50,6 +50,11 @@
 		android:layout_height="wrap_content"
 		android:id="@+id/save_tour"
 		android:text="Save tour"/>
+	<Button
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:id="@+id/share_tour"
+		android:text="Share tour"/>
 
 
 </LinearLayout>

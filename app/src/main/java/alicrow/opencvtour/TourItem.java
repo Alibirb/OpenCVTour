@@ -3,6 +3,7 @@ package alicrow.opencvtour;
 import android.location.Location;
 import android.util.Log;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +19,8 @@ public class TourItem {
 	private String _name;
 	private String _description;
 	private String _directions;
-	private String _main_image_filename = "";    /// filename of the TourItem's main image, to be displayed in thumbnails
-	private ArrayList<String> _image_filenames = new ArrayList<>();
+	private String _main_image_filepath = "";    /// filepath of the TourItem's main image, to be displayed in thumbnails
+	private ArrayList<String> _image_filepaths = new ArrayList<>();
 	/// TODO: audio file
 	private Location _location;
 	private Tour _tour;
@@ -53,9 +54,14 @@ public class TourItem {
 		data.put("directions", _directions);
 
 		if(hasMainImage())
-			data.put("main_image", _main_image_filename);
+			data.put("main_image", _main_image_filepath.substring(_main_image_filepath.lastIndexOf("/")+1));
 
-		data.put("images", _image_filenames);
+		ArrayList<String> filenames = new ArrayList<>();
+		for(String filepath : _image_filepaths) {
+			File file = new File(filepath);
+			filenames.add(file.getName());
+		}
+		data.put("images", filenames);
 
 		if(_location != null) {
 			/// Location contains a bunch of information we're not interested in (e.g. timestamp, speed), so we're just going to export the information that's actually useful to us.
@@ -78,13 +84,13 @@ public class TourItem {
 		setDescription((String) data.get("description"));
 		setDirections((String) data.get("directions"));
 		if(data.containsKey("main_image") && data.get("main_image") != null) {
-			setMainImage((String) data.get("main_image"));
+			setMainImage((new File(_tour.getDirectory(), (String) data.get("main_image"))).getPath());
 		} else
-			_main_image_filename = "";
+			_main_image_filepath = "";
 
 		if(data.containsKey("images") && data.get("images") != null) {
 			for(String image : (ArrayList<String>) data.get("images")) {
-				addImageFilename(image);
+				addImageFilepath((new File(_tour.getDirectory(), image)).getPath());
 			}
 		}
 
@@ -123,35 +129,35 @@ public class TourItem {
 		return _unique_id;
 	}
 
-	public String getMainImageFilename() {
-		return _main_image_filename;
+	public String getMainImageFilepath() {
+		return _main_image_filepath;
 	}
-	public void setMainImage(String filename) {
-		_main_image_filename = filename;
+	public void setMainImage(String filepath) {
+		_main_image_filepath = filepath;
 	}
 	public boolean hasMainImage() {
-		return (_main_image_filename != null) && !_main_image_filename.equals("");
+		return (_main_image_filepath != null) && !_main_image_filepath.equals("");
 	}
 
-	public ArrayList<String> getImageFilenames() {
-		return _image_filenames;
+	public ArrayList<String> getImageFilepaths() {
+		return _image_filepaths;
 	}
-	public void addImageFilename(String filename) {
-		_image_filenames.add(filename);
+	public void addImageFilepath(String filepath) {
+		_image_filepaths.add(filepath);
 		if(!hasMainImage()) {
 			/// make this the main image if we don't have a main image set yet
-			setMainImage(filename);
+			setMainImage(filepath);
 		}
-		_tour.getDetector().addToLibrary(filename, _unique_id);
+		_tour.getDetector().addToLibrary(filepath, _unique_id);
 	}
-	public void removeImage(String filename) {
-		_image_filenames.remove(filename);
-		if(hasMainImage() && _main_image_filename.equals(filename)) {
+	public void removeImage(String filepath) {
+		_image_filepaths.remove(filepath);
+		if(hasMainImage() && _main_image_filepath.equals(filepath)) {
 			/// if we just deleted the main image, choose a new main image
-			if(_image_filenames.size() == 0)
-				_main_image_filename = "";
+			if(_image_filepaths.size() == 0)
+				_main_image_filepath = "";
 			else
-				_main_image_filename = _image_filenames.get(0);
+				_main_image_filepath = _image_filepaths.get(0);
 		}
 		/// FIXME: Needs to remove the image from the ImageDetector
 	}

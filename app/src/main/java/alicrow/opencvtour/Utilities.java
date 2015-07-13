@@ -1,6 +1,7 @@
 package alicrow.opencvtour;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -14,12 +15,19 @@ import android.util.Log;
 import android.util.LruCache;
 import android.widget.ImageView;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Created by daniel on 6/2/15.
@@ -242,20 +250,24 @@ public class Utilities {
 		return (int)( dp * scale + 0.5f);
 	}
 
-	public static Uri createImageFile() throws IOException {
+	public static Uri createImageFile(Context context, boolean is_temp) throws IOException {
 		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String image_filename = "JPEG_" + timestamp + "_";
-		return Uri.fromFile(File.createTempFile(image_filename, ".jpg", Tour.getTourDirectory()));
+		File file;
+		if(is_temp)
+			file = new File(context.getExternalCacheDir(), image_filename + ".jpg");
+		else
+			file = new File(Tour.getCurrentTour().getDirectory(), image_filename + ".jpg");
+		return Uri.fromFile(file);
 	}
 
-	/// TODO: add option to make the image temporary
-	public static Uri takePicture(Activity activity) {
+	public static Uri takePicture(Activity activity, boolean is_temp) {
 		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 		Uri photo_uri = null;
 		if (intent.resolveActivity(activity.getPackageManager()) != null) {
 			// Create a file to save the photo to
 			try {
-				photo_uri = Utilities.createImageFile();
+				photo_uri = Utilities.createImageFile(activity, is_temp);
 			} catch (IOException ex) {
 				Log.e(TAG, ex.toString());
 			}
@@ -269,6 +281,81 @@ public class Utilities {
 			}
 		}
 		return photo_uri;
+	}
+
+	public static void compressFolder(String input_path, String output_path, boolean skip_images) {
+		try {
+			FileOutputStream fos = new FileOutputStream(output_path);
+			ZipOutputStream zos = new ZipOutputStream(fos);
+			File srcFile = new File(input_path);
+			File[] files = srcFile.listFiles();
+			Log.d(TAG, "Zip directory: " + srcFile.getName());
+			for (File file : files) {
+				if(skip_images && file.getName().endsWith(".jpg")) {
+					Log.d(TAG, "Skipping image file " + file.getName());
+				} else {
+					Log.d(TAG, "Adding file: " + file.getName());
+					byte[] buffer = new byte[1024];
+					FileInputStream fis = new FileInputStream(file);
+					zos.putNextEntry(new ZipEntry(file.getName()));
+					int length;
+					while ((length = fis.read(buffer)) > 0) {
+						zos.write(buffer, 0, length);
+					}
+					zos.closeEntry();
+					fis.close();
+				}
+			}
+			zos.close();
+		} catch (IOException ioe) {
+			Log.e(TAG, ioe.getMessage());
+		}
+	}
+	public static void extractFolder(String input_path, String output_path) {
+		try {
+			extractFolder(new FileInputStream(input_path), output_path);
+		} catch(Exception ex) {
+			Log.e(TAG, ex.getMessage());
+		}
+	}
+	public static void extractFolder(InputStream is, String output_path) {
+		try {
+			File output_folder = new File(output_path);
+			if(!output_folder.exists())
+				output_folder.mkdir();
+
+			if(!output_path.endsWith("/"))
+				output_path = output_path + "/";
+
+			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+			ZipEntry ze;
+			byte[] buffer = new byte[1024];
+			int count;
+			String filename;
+			while ((ze = zis.getNextEntry()) != null) {
+				filename = ze.getName();
+				Log.d(TAG, "Extracting file " + filename);
+
+				if (ze.isDirectory()) {
+					File fmd = new File(output_path + filename);
+					fmd.mkdirs();
+					continue;
+				}
+
+				FileOutputStream fout = new FileOutputStream(output_path + filename);
+
+				while ((count = zis.read(buffer)) != -1) {
+					fout.write(buffer, 0, count);
+				}
+
+				fout.close();
+				zis.closeEntry();
+			}
+
+			zis.close();
+		} catch (IOException ioe) {
+			Log.e(TAG, ioe.getMessage());
+		}
 	}
 
 }

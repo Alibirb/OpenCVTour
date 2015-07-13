@@ -3,7 +3,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/list_item_height_single_line"
-				android:descendantFocusability="blocksDescendants">
+				android:descendantFocusability="blocksDescendants"
+				android:id="@+id/container" >
 
 	<ImageView
 		android:id="@+id/tour_item_thumbnail"

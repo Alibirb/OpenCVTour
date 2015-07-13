@@ -5,12 +5,15 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/OpenCV Library - 3.0.0"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/OpenCV Library - 3.0.0"/>
 	<classpathentry kind="lib" path="/android-support-v7-appcompat/libs/android-support-v7-appcompat.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/google-play-services_lib"/>
+	<classpathentry kind="lib" path="libs/snakeyaml-1.15-SNAPSHOT-android.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/google-play-services_lib"/>
 	<classpathentry exported="true" kind="lib" path="/recyclerview/libs/android-support-v7-recyclerview.jar"/>
 	<classpathentry kind="lib" path="/OpenCV Library - 3.0.0/bin/opencv library - 3.0.0.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/android-support-v7-appcompat"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/android-support-v7-appcompat"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/recyclerview"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/main"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/design"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
