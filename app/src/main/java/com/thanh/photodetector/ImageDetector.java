@@ -50,7 +50,7 @@ public class ImageDetector {
 	private List<TrainingImage> training_library;
 
 	public ImageDetector() {
-		this(FeatureDetector.ORB, DescriptorExtractor.ORB, DescriptorMatcher.BRUTEFORCE_HAMMING);
+		this(FeatureDetector.FAST, DescriptorExtractor.ORB, DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 	}
 
 	public ImageDetector(int detector_type, int extractor_type, int matcher_type)
