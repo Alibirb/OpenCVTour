@@ -39,7 +39,6 @@ public class ImageDetector {
 
 	private double multiplier;
     double filter_ratio;
-	private int number_of_key_points;
 
 	// tag of messages printed to LogCat
 	protected static final String TAG = "ImageDetector";
@@ -64,7 +63,6 @@ public class ImageDetector {
 				(matcher_type);
 		training_library= new ArrayList<TrainingImage>();
 		multiplier = 0.5;
-		number_of_key_points = 1000;
 		filter_ratio = 1.25;
 	}
 
@@ -121,8 +119,6 @@ public class ImageDetector {
 
 	// Method that detects a given image based on the training library
 	public TrainingImage detectPhoto(String query_path){
-//		Log.i(TAG, "called detectFeatures");
-
 		Mat img = Imgcodecs.imread(query_path);
 		Mat resized_img = resize(img); // scale down the query image
 		TrainingImage query_image = new TrainingImage(query_path,0,resized_img);
@@ -130,31 +126,23 @@ public class ImageDetector {
 		// get descriptors of the query image
 		// detect the matrix of key points of that image
 		Mat query_descriptors = imgDescriptor(query_image);
-//		Log.i(TAG, "query image descriptors:  "+ query_descriptors.size());
 
 		// Match the descriptors of a query image
 		// to descriptors in the training collection.
 		MatOfDMatch matches= new MatOfDMatch();
 		dMatcher.match(query_descriptors, matches);
-//		Log.i(TAG, "matrix of matches size:  "+ matches.size());
 
 		// filter good matches
-		List<DMatch> total_matches = matches.toList();
-		List<DMatch> good_matches = total_matches;
-//		List<DMatch> good_matches = filterGoodMatches(total_matches);
-//		Log.i(TAG, "list of all matches size:  "+ total_matches.size());
-//		Log.i(TAG, "list of good matches size:  "+ good_matches.size());
+		List<DMatch> list_of_matches = matches.toList();
 
 		// find the image that matches the most
-		TrainingImage bestMatch = findBestMatch(good_matches);
-//		Log.i(TAG, "bestMatch image:  "+ bestMatch.pathID());
+		TrainingImage bestMatch = findBestMatch(list_of_matches);
 
 		// update variables for drawCurrentMatches method
 		CURRENT_QUERY_IMAGE = query_image;
 		CURRENT_RESULT_IMAGE = bestMatch;
-		CURRENT_GOOD_MATCHES = getCurrentGoodMatches(good_matches, bestMatch);
+		CURRENT_GOOD_MATCHES = getCurrentGoodMatches(list_of_matches, bestMatch);
 
-//		Log.i(TAG, "finishing detectFeatures");
 		return bestMatch;
 	}
 
@@ -266,54 +254,6 @@ public class ImageDetector {
 		}
 	}
 
-	// Method that returns the top 'n' best key points
-	private MatOfKeyPoint topKeyPoints(MatOfKeyPoint imgKeyPoints, int n)
-	{
-//		Log.i(TAG, "imgKeyPoints size:  "+ imgKeyPoints.size());
-		// Sort and select n best key points
-		List<KeyPoint> listOfKeypoints = imgKeyPoints.toList();
-		if(listOfKeypoints.size()<n){
-			Log.i(ERROR, "There are not enough "+n+" key points, only "+listOfKeypoints.size());
-			return imgKeyPoints;
-		}
-		Collections.sort(listOfKeypoints, new Comparator<KeyPoint>() {
-			@Override
-			public int compare(KeyPoint kp1, KeyPoint kp2) {
-				// Sort them in descending order, so the best response KPs will come first
-				return (int) (kp2.response - kp1.response);
-			}
-		});
-//		Log.i(TAG, "listOfKeypoints size:  "+ listOfKeypoints.size());
-		List<KeyPoint> bestImgKeyPoints = listOfKeypoints.subList(0,n);
-//		Log.i(TAG, "bestImgKeyPoints size:  "+ bestImgKeyPoints.size());
-
-		MatOfKeyPoint result = new MatOfKeyPoint();
-		result.fromList(bestImgKeyPoints);
-	return result;
-	}
-
-	// Method that filters good matches from given list of matches,
-	// using arbitrary bounds
-	private List<DMatch> filterGoodMatches(List<DMatch> total_matches)
-	{
-		List<DMatch> goodMatches = new ArrayList<DMatch>();
-		double max_dist = 0; double min_dist = 100;
-		// calculate max and min distances between keypoints
-		for( DMatch dm: total_matches)
-		{
-			double dist = dm.distance;
-			if( dist < min_dist ) min_dist = dist;
-			if( dist > max_dist ) max_dist = dist;
-		}
-		for(DMatch aMatch: total_matches){
-			//	(!) WARNING:	hard code, arbitrary constants 3 & 0.02
-			if( aMatch.distance <= Math.max(3*min_dist, 0.02)){
-				goodMatches.add(aMatch);
-			}
-		}
-		return goodMatches;
-	}
-
 	HashMap<TrainingImage, Integer> CURRENT_MATCH_FREQUENCY;
 	// Method that finds the best match from a list of matches
 	private TrainingImage findBestMatch(List<DMatch> good_matches)
@@ -332,9 +272,8 @@ public class ImageDetector {
 		// search for the image that matches the largest number of descriptors.
 		TrainingImage bestMatch= null;
 		TrainingImage secondBestMatch= null;
-//    	Log.i(TAG, "hashmap of matches size:  "+ hm.size());
+
 		for(TrainingImage trainImg: hm.keySet()){
-//    		Log.i(TAG, "train img:  "+ trainImg);
 			if(bestMatch == null){
 				bestMatch= trainImg;				
 			}else{
@@ -382,80 +321,9 @@ public class ImageDetector {
 		Imgproc.cvtColor(rgba, rgba, Imgproc.COLOR_RGB2RGBA);
 	}
 
-	public void drawFeatures2(Mat rgba,MatOfKeyPoint keyPoints){
+	public void drawFeatures(Mat rgba,MatOfKeyPoint keyPoints){
 		Imgproc.cvtColor(rgba, rgba, Imgproc.COLOR_RGBA2RGB);
 		Features2d.drawKeypoints(rgba,keyPoints,rgba);
 		Imgproc.cvtColor(rgba, rgba, Imgproc.COLOR_RGB2RGBA);
-	}
-
-	private void alternateFilter()
-	{
-//		// set threshold to 100 (instead of 1) to reduce the number of key points
-//		// not work for new opencv
-//		try {
-//			File outputDir = getCacheDir(); // If in an Activity (otherwise getActivity.getCacheDir();
-//			File outputFile = File.createTempFile("orbDetectorParams", ".YAML", outputDir);
-//			writeToFile(outputFile, "%YAML:1.0\nthreshold: 100 \nnonmaxSupression: true\n");
-//			fDetector.read(outputFile.getPath());
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-
-	}
-
-	// (URL Source) http://answers.opencv.org/question/3167/java-how-to-set-parameters-to-orb-featuredetector/?answer=17296#post-id-17296
-	private void writeToFile(File file, String data) {
-		try {
-			FileOutputStream stream = new FileOutputStream(file);
-			OutputStreamWriter outputStreamWriter = new OutputStreamWriter(stream);
-			outputStreamWriter.write(data);
-			outputStreamWriter.close();
-			stream.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	private void ratioTest()
-	{
-
-//    	// match with ratio test
-//    	List<MatOfDMatch> match_list = new ArrayList<MatOfDMatch>();
-//    	dMatcher.knnMatch(query_descriptors, match_list, 2);
-//    	Log.i(TAG, "knnMatch, k=2, match_list size:  "+  match_list.size());
-//    	List<DMatch> tested_dMatch = new ArrayList<DMatch>();
-//    	for(MatOfDMatch mat: match_list)
-//    	{
-//    		List<DMatch> dMatches = mat.toList();
-//    		Log.i(TAG, "dMatches.size:  "+  dMatches.size());
-//    		if(dMatches.size() <2)
-//    		{
-//    			tested_dMatch.add(dMatches.get(0));
-//    		}else{
-//	    		Log.i(TAG, "dMatches get (0):  "+  
-//	    				dMatches.get(0).distance +"  "+
-//	    				dMatches.get(0).imgIdx +"  "+ 
-//	    				dMatches.get(0).queryIdx +"  "+ 
-//	    				dMatches.get(0).trainIdx);
-//	    		Log.i(TAG, "dMatches get (1):  "+  
-//	    				dMatches.get(1).distance +"  "+
-//	    				dMatches.get(1).imgIdx +"  "+ 
-//	    				dMatches.get(1).queryIdx +"  "+ 
-//	    				dMatches.get(1).trainIdx);
-//	    		if(dMatches.get(0).distance < 0.75 * dMatches.get(1).distance)
-//	    		{
-//	    			tested_dMatch.add(dMatches.get(0));
-//	    		}
-//    		}
-//    	}
-//    	// filter good matches
-//    	List<DMatch> total_matches = tested_dMatch;
-//    	List<DMatch> good_matches = tested_dMatch;
-
 	}
 }
