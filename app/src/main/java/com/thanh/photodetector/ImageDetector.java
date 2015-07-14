@@ -37,7 +37,6 @@ public class ImageDetector {
 	private DescriptorExtractor dExtractor;
 	private DescriptorMatcher dMatcher;
 
-	private double multiplier;
     double filter_ratio;
 
 	// tag of messages printed to LogCat
@@ -62,7 +61,6 @@ public class ImageDetector {
 		dMatcher= DescriptorMatcher.create
 				(matcher_type);
 		training_library= new ArrayList<TrainingImage>();
-		multiplier = 0.5;
 		filter_ratio = 1.25;
 	}
 
@@ -107,7 +105,10 @@ public class ImageDetector {
 	public Mat resize(Mat src_img)
 	{
 		// scale down images
-		Size size= new Size(src_img.size().width*multiplier, src_img.size().height*multiplier);
+		double h = src_img.size().height;
+		double w = src_img.size().width;
+		double multiplier = 300/Math.max(h,w);
+		Size size= new Size(w*multiplier, h*multiplier);
 		Imgproc.resize(src_img, src_img, size);
 		return src_img;
 	}
