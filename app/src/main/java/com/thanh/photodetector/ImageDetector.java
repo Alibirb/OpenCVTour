@@ -213,9 +213,6 @@ public class ImageDetector {
 		MatOfKeyPoint imgKeyPoints = new MatOfKeyPoint();
 		fDetector.detect(img, imgKeyPoints);
 
-		// filter the best key points
-		imgKeyPoints= topKeyPoints(imgKeyPoints, number_of_key_points);
-
 		// compute the descriptor from those key points
 		dExtractor.compute(img,imgKeyPoints, imgDescriptor);
 		train_img.setKeyPoints(imgKeyPoints);
