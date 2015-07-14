@@ -107,10 +107,9 @@ public class ImageDetector {
 	public Mat resize(Mat src_img)
 	{
 		// scale down images
-		Mat resized_img= new Mat();
 		Size size= new Size(src_img.size().width*multiplier, src_img.size().height*multiplier);
-		Imgproc.resize(src_img, resized_img, size);
-		return resized_img;
+		Imgproc.resize(src_img, src_img, size);
+		return src_img;
 	}
 
 	// variables for drawCurrentMatches method
