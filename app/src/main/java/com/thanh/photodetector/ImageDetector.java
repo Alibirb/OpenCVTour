@@ -331,18 +331,26 @@ public class ImageDetector {
 		CURRENT_MATCH_FREQUENCY = hm;
 		// search for the image that matches the largest number of descriptors.
 		TrainingImage bestMatch= null;
-		Integer greatestCount=0;
-		Integer secondGreatestCount=0;
+		TrainingImage secondBestMatch= null;
 //    	Log.i(TAG, "hashmap of matches size:  "+ hm.size());
 		for(TrainingImage trainImg: hm.keySet()){
 //    		Log.i(TAG, "train img:  "+ trainImg);
-			Integer count=hm.get(trainImg);
-			if(count> greatestCount){
-				secondGreatestCount = greatestCount;
-				greatestCount= count;
-				bestMatch= trainImg;
-			}else if(count> secondGreatestCount){
-				secondGreatestCount = count;
+			if(bestMatch == null){
+				bestMatch= trainImg;				
+			}else{
+				if(hm.get(trainImg)> hm.get(bestMatch)){
+					secondBestMatch = bestMatch;
+					bestMatch= trainImg;
+				}else{
+					if (secondBestMatch == null){
+						secondBestMatch = trainImg;
+					}else{
+						if(trainImg.tourID() != bestMatch.tourID() 
+								&& hm.get(trainImg)> hm.get(secondBestMatch)){
+							secondBestMatch = trainImg;
+						}
+					}
+				}
 			}
 		}
 
@@ -351,9 +359,14 @@ public class ImageDetector {
 			Log.i(TAG, "Matched img result:  "+ trainImg.pathID() +
 					", numOfMatches: "+hm.get(trainImg));
 		}
-		if (greatestCount > filter_ratio*secondGreatestCount){
+		
+		if (secondBestMatch == null){
 			return bestMatch;
-		}else{
+		}
+		else if (hm.get(bestMatch) > filter_ratio*hm.get(secondBestMatch)){
+			return bestMatch;
+		}
+		else{
 			Log.i(TAG, "Found no best match for the query image!");
 			return null;
 		}
