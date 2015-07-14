@@ -38,6 +38,7 @@ public class ImageDetector {
 	private DescriptorMatcher dMatcher;
 
 	private double multiplier;
+    double filter_ratio;
 	private int number_of_key_points;
 
 	// tag of messages printed to LogCat
@@ -64,6 +65,7 @@ public class ImageDetector {
 		training_library= new ArrayList<TrainingImage>();
 		multiplier = 0.5;
 		number_of_key_points = 1000;
+		filter_ratio = 1.25;
 	}
 
 	public void addToLibrary(String image_path, long tour_item_id)
@@ -349,7 +351,7 @@ public class ImageDetector {
 			Log.i(TAG, "Matched img result:  "+ trainImg.pathID() +
 					", numOfMatches: "+hm.get(trainImg));
 		}
-		if (greatestCount > 1.5*secondGreatestCount){
+		if (greatestCount > filter_ratio*secondGreatestCount){
 			return bestMatch;
 		}else{
 			Log.i(TAG, "Found no best match for the query image!");
