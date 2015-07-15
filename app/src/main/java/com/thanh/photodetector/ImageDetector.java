@@ -94,9 +94,9 @@ public class ImageDetector {
 		dMatcher.clear();
 	}
 
-	public long identifyObject(String image_path)
+	public long identifyObject(String image_path, List<Long> item_ids)
 	{
-		TrainingImage result = detectPhoto(image_path);
+		TrainingImage result = detectPhoto(image_path, item_ids);
 		if(result == null)
 			return -1;
 		return result.tourID();
@@ -118,8 +118,17 @@ public class ImageDetector {
 	TrainingImage CURRENT_RESULT_IMAGE;
 	MatOfDMatch CURRENT_GOOD_MATCHES;
 
-	// Method that detects a given image based on the training library
 	public TrainingImage detectPhoto(String query_path){
+		List<Long> ids = new ArrayList<>();
+		for(TrainingImage img : training_library) {
+			if(!ids.contains(img.tourID()))
+				ids.add(img.tourID());
+		}
+		return detectPhoto(query_path, ids);
+	}
+
+	// Method that detects a given image based on the training library
+	public TrainingImage detectPhoto(String query_path, List<Long> item_ids){
 		Mat img = Imgcodecs.imread(query_path);
 		Mat resized_img = resize(img); // scale down the query image
 		TrainingImage query_image = new TrainingImage(query_path,0,resized_img);
@@ -136,6 +145,9 @@ public class ImageDetector {
 		// filter good matches
 		List<DMatch> list_of_matches = matches.toList();
 
+		// filter out any items not in our list
+		list_of_matches = filterByItem(list_of_matches, item_ids);
+
 		// find the image that matches the most
 		TrainingImage bestMatch = findBestMatch(list_of_matches);
 
@@ -145,6 +157,15 @@ public class ImageDetector {
 		CURRENT_GOOD_MATCHES = getCurrentGoodMatches(list_of_matches, bestMatch);
 
 		return bestMatch;
+	}
+
+	private List<DMatch> filterByItem(List<DMatch> matches, List<Long> item_ids) {
+		List<DMatch> filtered_matches = new ArrayList<>();
+		for(DMatch match : matches) {
+			if(item_ids.contains(training_library.get(match.imgIdx).tourID()))
+				filtered_matches.add(match);
+		}
+		return filtered_matches;
 	}
 
 	private MatOfDMatch getCurrentGoodMatches(List<DMatch> good_matches,TrainingImage bestMatch)

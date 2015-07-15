@@ -22,6 +22,8 @@ import org.opencv.android.OpenCVLoader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Activity to follow a Tour.
@@ -175,27 +177,43 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	}
 
 	private void updateDisplay() {
-		Location current_location = _connection.getService().getCurrentLocation();
-		if (current_location == null) {
-			Log.e(TAG, "got null current location");
-			((TextView) findViewById(R.id.current_location)).setText("Current location: unknown (Ensure that location is enabled on your device)");
-			Toast.makeText(this, "Couldn't determine location. Ensure location is enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
-			return;
+		Tour current_tour = Tour.getCurrentTour();
+
+		List<TourItem> filtered_items = current_tour.getTourItems();
+
+		Location current_location = null;
+		if(current_tour.getGpsEnabled()) {
+			current_location = _connection.getService().getCurrentLocation();
+			if (current_location == null) {
+				Log.e(TAG, "got null current location");
+				((TextView) findViewById(R.id.current_location)).setText("Current location: unknown (Ensure that location is enabled on your device)");
+				Toast.makeText(this, "Couldn't determine location. Ensure location is enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
+				return;
+			}
+
+			((TextView) findViewById(R.id.current_location)).setText("Current location: " + current_location.getLatitude() + ", " + current_location.getLongitude() + ", accuracy: " + current_location.getAccuracy() + " meters");
+
+			filtered_items = filterDistantTourItems(filtered_items, current_location, current_tour.getItemRange());
 		}
 
-		((TextView) findViewById(R.id.current_location)).setText("Current location: " + current_location.getLatitude() + ", " + current_location.getLongitude() + ", accuracy: " + current_location.getAccuracy() + " meters");
+		List<Long> filtered_item_ids = new ArrayList<>();
+		for(TourItem item : filtered_items) {
+			filtered_item_ids.add(item.getId());
+		}
 
-		TourItem closest_item = Tour.getCurrentTour().getTourItem(Tour.getCurrentTour().getDetector().identifyObject(_photo_uri.getPath()));
+		TourItem detected_item = current_tour.getTourItem(current_tour.getDetector().identifyObject(_photo_uri.getPath(), filtered_item_ids));
 
-		if(closest_item != null)
-			Log.i(TAG, "closest item is named " + closest_item.getName());
-		else {
+		if(detected_item != null) {
+			Log.i(TAG, "detected item named " + detected_item.getName());
+			if(current_location != null)
+				Toast.makeText(this, "distance is " + current_location.distanceTo(detected_item.getLocation()) + " meters", Toast.LENGTH_LONG).show();
+		} else {
 			Log.i(TAG, "got null TourItem");
 			Toast.makeText(this, "No tour item detected.", Toast.LENGTH_SHORT).show();
 		}
 
-		if(closest_item != null && (!Tour.getCurrentTour().getEnforceOrder() || getNextTourItem() == closest_item)) {
-			displayTourItem(closest_item);
+		if(detected_item != null && (!current_tour.getEnforceOrder() || getNextTourItem() == detected_item)) {
+			displayTourItem(detected_item);
 		} else {
 			findViewById(R.id.closest_tour_item_name).setVisibility(View.INVISIBLE);
 			findViewById(R.id.closest_tour_item_location).setVisibility(View.INVISIBLE);
@@ -203,16 +221,19 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		}
 	}
 
-	private TourItem findClosestTourItem(Location current_location) {
-		TourItem closest_item = null;
-		double closest_distance = Double.MAX_VALUE;
-		for(TourItem item : Tour.getCurrentTour().getTourItems()) {
-			if(item.getLocation() != null && current_location.distanceTo(item.getLocation()) < closest_distance) {
-				closest_item = item;
-				closest_distance = current_location.distanceTo(item.getLocation());
+	/// Filters out any TourItems not within threshold meters of current_location
+	private static List<TourItem> filterDistantTourItems(List<TourItem> items, Location current_location, double threshold) {
+		List<TourItem> nearby_items = new ArrayList<>();
+		for(TourItem item : items) {
+			/// if the item is close enough, or doesn't have a location set, we add it to the list
+			if(item.getLocation() == null || current_location.distanceTo(item.getLocation()) < threshold) {
+				nearby_items.add(item);
 			}
+
+			if(item.getLocation() != null)
+				Log.d(TAG, item.getName() + " is " + current_location.distanceTo(item.getLocation()) + " meters away");
 		}
-		return closest_item;
+		return nearby_items;
 	}
 
 	private void displayTourItem(TourItem item) {

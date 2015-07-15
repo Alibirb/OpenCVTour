@@ -39,6 +39,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		android:id="@+id/range_selection_line">
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Only check items within "/>
+		<EditText
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/item_range"
+			android:inputType="numberDecimal" />
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text=" meters"/>
+	</LinearLayout>
+
 	<CheckBox
 		android:id="@+id/enforce_order"
 		android:text="Tour items must be visited in order"

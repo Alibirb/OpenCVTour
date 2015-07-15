@@ -34,6 +34,12 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 		((CheckBox) v.findViewById(R.id.enable_gps)).setChecked(Tour.getCurrentTour().getGpsEnabled());
 		((CheckBox) v.findViewById(R.id.enforce_order)).setChecked(Tour.getCurrentTour().getEnforceOrder());
 		((TextView) v.findViewById(R.id.tour_name)).setText(Tour.getCurrentTour().getName());
+		((TextView) v.findViewById(R.id.item_range)).setText(Double.toString(Tour.getCurrentTour().getItemRange()));
+
+		if(Tour.getCurrentTour().getGpsEnabled())
+			v.findViewById(R.id.range_selection_line).setVisibility(View.VISIBLE);
+		else
+			v.findViewById(R.id.range_selection_line).setVisibility(View.GONE);
 
 		return v;
 	}
@@ -46,7 +52,12 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 				break;
 
 			case R.id.enable_gps:
-				Tour.getCurrentTour().setGpsEnabled(((CheckBox) v).isChecked());
+				boolean enabled = ((CheckBox) v).isChecked();
+				Tour.getCurrentTour().setGpsEnabled(enabled);
+				if(enabled)
+					getActivity().findViewById(R.id.range_selection_line).setVisibility(View.VISIBLE);
+				else
+					getActivity().findViewById(R.id.range_selection_line).setVisibility(View.GONE);
 				break;
 
 			case R.id.enforce_order:
@@ -55,12 +66,14 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 
 			case R.id.save_tour: {
 				Tour.getCurrentTour().setName(((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString());
+				Tour.getCurrentTour().setItemRange(Double.parseDouble(((TextView) getActivity().findViewById(R.id.item_range)).getText().toString()));
 				Tour.getCurrentTour().saveToFile();
 				break;
 			}
 			case R.id.share_tour: {
 				String tour_name = ((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString();
 				Tour.getCurrentTour().setName(tour_name);
+				Tour.getCurrentTour().setItemRange(Double.parseDouble(((TextView) getActivity().findViewById(R.id.item_range)).getText().toString()));
 				Tour.getCurrentTour().saveToFile();
 
 				File archive = new File(getActivity().getExternalCacheDir(), tour_name + ".zip.tour");
@@ -75,6 +88,8 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 				break;
 			}
 			case R.id.follow_tour: {
+				Tour.getCurrentTour().setName(((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString());
+				Tour.getCurrentTour().setItemRange(Double.parseDouble(((TextView) getActivity().findViewById(R.id.item_range)).getText().toString()));
 				startActivity(new Intent(getActivity(), FollowTourActivity.class));
 				break;
 			}

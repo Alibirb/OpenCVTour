@@ -35,6 +35,7 @@ public class Tour {
 	private ImageDetector _detector = new ImageDetector();
 	private File _directory;
 	private boolean _editable = true;
+	private double _item_range;
 
 	public static Tour getCurrentTour() {
 		if(_currentTour == null)
@@ -225,6 +226,7 @@ public class Tour {
 		data.put("gps_enabled", _gps_enabled);
 		data.put("name", _name);
 		data.put("enforce_order", _enforce_order);
+		data.put("item_range", _item_range);
 
 		ArrayList<Map<String, Object>> item_maps = new ArrayList<>();
 		for(TourItem item : _tour_items)
@@ -237,6 +239,10 @@ public class Tour {
 		setGpsEnabled((Boolean) data.get("gps_enabled"));
 		setEnforceOrder((Boolean) data.get("enforce_order"));
 		setName((String) data.get("name"));
+		if(data.containsKey("item_range") && data.get("item_range") != null)
+			setItemRange((Double) data.get("item_range"));
+		else
+			setItemRange(50);
 
 		_tour_items.clear();
 		for(Map<String,Object> map : (ArrayList<Map<String,Object>>) data.get("items")) {
@@ -327,6 +333,13 @@ public class Tour {
 	}
 	public void setEditable(boolean editable) {
 		_editable = editable;
+	}
+
+	public double getItemRange() {
+		return _item_range;
+	}
+	public void setItemRange(double	distance) {
+		_item_range = distance;
 	}
 
 }
