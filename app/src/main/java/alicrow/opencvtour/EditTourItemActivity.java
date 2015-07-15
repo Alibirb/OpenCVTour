@@ -254,12 +254,13 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		_tour_item.setDescription(((EditText) findViewById(R.id.edit_tour_item_description)).getText().toString());
 		_tour_item.setDirections(((EditText) findViewById(R.id.edit_tour_item_directions)).getText().toString());
 
-		Bundle data = new Bundle();
-		data.putBoolean("item_edited", true);
-		Intent intent = new Intent();
-		intent.putExtras(data);
-		setResult(RESULT_OK, intent);
+		setResult(RESULT_OK);
 		finish();
+	}
+
+	@Override
+	public void onBackPressed() {
+		applyChanges();
 	}
 
 	@Override
