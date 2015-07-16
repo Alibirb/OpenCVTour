@@ -50,6 +50,19 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 		return _current_location;
 	}
 
+	public void stopLocationUpdates() {
+		LocationServices.FusedLocationApi.removeLocationUpdates(_google_api_client, this);
+		Log.d(TAG, "stopping location updates");
+	}
+	public void startLocationUpdates() {
+		if(!_google_api_client.isConnected()) {
+			Log.w(TAG, "Google API client is not yet connected; cannot request updates yet");
+			return;
+		}
+		LocationServices.FusedLocationApi.requestLocationUpdates(_google_api_client, _location_request, this);
+		Log.d(TAG, "starting location updates");
+	}
+
 	@Override
 	public void onCreate() {
 		setupGoogleLocationServices();
@@ -71,17 +84,17 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 	public void onConnected(Bundle connectionHint) {
 		Log.i(TAG, "connected to Google Play services");
 		if(_requesting_location_updates)
-			LocationServices.FusedLocationApi.requestLocationUpdates(_google_api_client, _location_request, this);
+			startLocationUpdates();
 	}
 
 	@Override
 	public void onConnectionSuspended(int cause) {
-		Log.i(TAG, "connection to Google Play services has been suspended");
+		Log.e(TAG, "connection to Google Play services has been suspended");
 	}
 
 	@Override
 	public void onConnectionFailed(ConnectionResult result) {
-		Log.i(TAG, "connection to Google Play services has failed");
+		Log.e(TAG, "connection to Google Play services has failed");
 	}
 
 	public static class ServiceConnection implements android.content.ServiceConnection {
@@ -90,6 +103,7 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			// This is called when the connection with the service has been established, giving us the service object we can use to interact with the service.  Because we have bound to a explicit service that we know is running in our own process, we can cast its IBinder to a concrete class and directly access it.
 			_service = ((LocationService.LocationServiceBinder)service).getService();
+			_service.startLocationUpdates();
 		}
 
 		public void onServiceDisconnected(ComponentName className) {

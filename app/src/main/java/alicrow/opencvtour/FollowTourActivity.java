@@ -34,6 +34,7 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	private LocationService.ServiceConnection _connection;
 	private boolean _service_is_bound = false;
 	private int _next_item_index = 0;
+	private Location _current_location;
 
 	private Uri _photo_uri;
 
@@ -106,13 +107,17 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		findViewById(R.id.find_closest_tour_item).setOnClickListener(this);
 
-		bindLocationService();
+		if(Tour.getCurrentTour().getGpsEnabled())
+			bindLocationService();
 
 		if(savedInstanceState != null) {
 			if(savedInstanceState.containsKey("next_item_index"))
 				_next_item_index = savedInstanceState.getInt("next_item_index");
 			if (savedInstanceState.containsKey("_photo_uri")) {
 				_photo_uri = Uri.parse(savedInstanceState.getString("_photo_uri"));
+			}
+			if(savedInstanceState.containsKey("_current_location")) {
+				_current_location = savedInstanceState.getParcelable("_current_location");
 			}
 		}
 
@@ -150,7 +155,9 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 	private void bindLocationService() {
 		_connection = new LocationService.ServiceConnection();
-		bindService(new Intent(this, LocationService.class), _connection, Context.BIND_AUTO_CREATE);
+		Intent intent = new Intent(getApplicationContext(), LocationService.class);
+		startService(intent);
+		bindService(intent, _connection, Context.BIND_AUTO_CREATE);
 		_service_is_bound = true;
 	}
 	private void unbindLocationService() {
@@ -163,17 +170,48 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		Log.d(TAG, "onDestroy called");
 		unbindLocationService();
+
+		if(!isChangingConfigurations()) {
+			stopService(new Intent(getApplicationContext(), LocationService.class));
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(TAG, "onResume called");
+		if(_connection != null && _connection.getService() != null)
+			_connection.getService().startLocationUpdates();
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		Log.d(TAG, "onStop called");
+		if(!isChangingConfigurations())
+			if(_connection != null && _connection.getService() != null)
+				_connection.getService().stopLocationUpdates();
 	}
 
 	@Override
 	protected void onSaveInstanceState(@NonNull Bundle outState) {
 		super.onSaveInstanceState(outState);
+		Log.d(TAG, "onSaveInstanceState called");
 
 		outState.putInt("next_item_index", _next_item_index);
 
 		if(_photo_uri != null)
 			outState.putString("_photo_uri", _photo_uri.toString());
+
+		if(_connection != null && _connection.getService() != null)
+			_current_location = _connection.getService().getCurrentLocation();
+
+		if(_current_location != null)
+			outState.putParcelable("_current_location", _current_location);
+		else
+			Log.d(TAG, "_current_location is null");
 	}
 
 	private void updateDisplay() {
@@ -181,20 +219,21 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		List<TourItem> filtered_items = current_tour.getTourItems();
 
-		Location current_location = null;
 		if(current_tour.getGpsEnabled()) {
-			current_location = _connection.getService().getCurrentLocation();
-			if (current_location == null) {
+			if(_connection.getService() != null)
+				_current_location = _connection.getService().getCurrentLocation();
+			if (_current_location == null) {
 				Log.e(TAG, "got null current location");
 				((TextView) findViewById(R.id.current_location)).setText("Current location: unknown (Ensure that location is enabled on your device)");
 				Toast.makeText(this, "Couldn't determine location. Ensure location is enabled on your device, and/or wait a few seconds and try again.", Toast.LENGTH_LONG).show();
 				return;
 			}
 
-			((TextView) findViewById(R.id.current_location)).setText("Current location: " + current_location.getLatitude() + ", " + current_location.getLongitude() + ", accuracy: " + current_location.getAccuracy() + " meters");
+			((TextView) findViewById(R.id.current_location)).setText("Current location: " + _current_location.getLatitude() + ", " + _current_location.getLongitude() + ", accuracy: " + _current_location.getAccuracy() + " meters");
 
-			filtered_items = filterDistantTourItems(filtered_items, current_location, current_tour.getItemRange());
-		}
+			filtered_items = filterDistantTourItems(filtered_items, _current_location, current_tour.getItemRange());
+		} else
+			_current_location = null;
 
 		List<Long> filtered_item_ids = new ArrayList<>();
 		for(TourItem item : filtered_items) {
@@ -205,8 +244,8 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		if(detected_item != null) {
 			Log.i(TAG, "detected item named " + detected_item.getName());
-			if(current_location != null)
-				Toast.makeText(this, "distance is " + current_location.distanceTo(detected_item.getLocation()) + " meters", Toast.LENGTH_LONG).show();
+			if(_current_location != null)
+				Toast.makeText(this, "distance is " + _current_location.distanceTo(detected_item.getLocation()) + " meters", Toast.LENGTH_LONG).show();
 		} else {
 			Log.i(TAG, "got null TourItem");
 			Toast.makeText(this, "No tour item detected.", Toast.LENGTH_SHORT).show();

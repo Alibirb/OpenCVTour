@@ -174,6 +174,20 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		unbindLocationService();
 	}
 
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(TAG, "onResume called");
+		if(_connection != null && _connection.getService() != null)
+			_connection.getService().startLocationUpdates();
+	}
+	@Override
+	protected void onStop() {
+		super.onStop();
+		if(!isChangingConfigurations())
+			if(_connection != null && _connection.getService() != null)
+				_connection.getService().stopLocationUpdates();
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
