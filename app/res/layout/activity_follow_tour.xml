@@ -1,54 +1,122 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 				xmlns:tools="http://schemas.android.com/tools"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:paddingLeft="@dimen/activity_horizontal_margin"
-				android:paddingRight="@dimen/activity_horizontal_margin"
-				android:paddingTop="@dimen/activity_vertical_margin"
-				android:paddingBottom="@dimen/activity_vertical_margin"
 				android:orientation="vertical"
 				tools:context="alicrow.opencvtour.FollowTourActivity"
 				android:weightSum="1">
 
+	<LinearLayout
+		android:id="@+id/current_item_container"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:padding="16dp"
+		android:layout_alignParentTop="true"
+		android:orientation="vertical"
+		android:visibility="gone">
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/current_tour_item_name"
+			android:text="Current tour item"
+			android:textAppearance="?android:attr/textAppearanceLarge" />
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="description"
+			android:id="@+id/current_tour_item_description" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/current_item_container"
+		android:padding="16dp"
+		android:orientation="vertical"
+		android:id="@+id/next_item_container">
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Next item"
+			android:textSize="14sp"
+			android:textStyle="bold|italic"/>
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:id="@+id/next_item_name"
+			android:text="name" />
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/directions"
+			android:text="directions" />
+	</LinearLayout>
 
 	<TextView
+		android:id="@+id/remaining_items_header"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/current_item_container"
+		android:text="Remaining items"
+		android:padding="16dp"
+		android:textSize="14sp"
+		android:textStyle="bold|italic"/>
+
+	<android.support.v7.widget.RecyclerView
+		android:id="@+id/remaining_items_list"
+		android:scrollbars="vertical"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_below="@id/remaining_items_header"
+		android:paddingBottom="8dp" />
+
+	<RelativeLayout
+		android:id="@+id/tour_complete_container"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/current_item_container"
+		android:padding="16dp"
+		android:visibility="gone">
+
+		<TextView
+			android:id="@+id/tour_complete_text"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Tour complete"
+			android:textSize="16sp" />
+
+		<Button
+			android:id="@+id/restart_button"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@id/tour_complete_text"
+			android:text="Restart" />
+
+		<Button
+			android:id="@+id/exit_button"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@id/tour_complete_text"
+			android:layout_toRightOf="@id/restart_button"
+			android:layout_toEndOf="@id/restart_button"
+			android:text="Exit"/>
+	</RelativeLayout>
+
+	<android.support.design.widget.FloatingActionButton
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:id="@+id/current_location"
-		android:text="Current location: unknown"/>
+		android:layout_gravity="bottom"
+		android:layout_margin="16dp"
+		android:layout_alignParentEnd="true"
+		android:layout_alignParentRight="true"
+		android:layout_alignParentBottom="true"
+		android:clickable="true"
+		android:src="@drawable/ic_camera_white_24dp"
+		android:id="@+id/fab" />
 
-	<TextView
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/directions"/>
-
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="Find closest tour item"
-		android:id="@+id/find_closest_tour_item" />
-
-	<TextView
-		android:text="Closest tour item"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/closest_tour_item_name"
-		android:textAppearance="?android:attr/textAppearanceLarge"
-		android:visibility="invisible"/>
-
-	<TextView
-		android:text="location: "
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/closest_tour_item_location"
-		android:visibility="invisible"/>
-
-	<TextView
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="description"
-		android:id="@+id/closest_tour_item_description"
-		android:visibility="invisible"/>
-
-
-</LinearLayout>
+</RelativeLayout>

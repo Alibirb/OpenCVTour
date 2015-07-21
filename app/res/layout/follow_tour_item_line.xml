@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/list_item_height_single_line_text_only" >
+
+	<TextView
+		android:id="@+id/item_name"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="16dp"
+		android:layout_marginStart="16dp"
+		android:layout_marginRight="16dp"
+		android:layout_marginEnd="16dp"
+		android:layout_marginTop="16dp"
+		android:textSize="16sp"
+		android:text="Tour item name" />
+
+	<TextView
+		android:id="@+id/item_directions"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="16dp"
+		android:layout_marginStart="16dp"
+		android:layout_marginRight="16dp"
+		android:layout_marginEnd="16dp"
+		android:layout_marginBottom="16dp"
+		android:layout_below="@id/item_name"
+		android:textSize="14sp"
+		android:text="directions"
+		android:maxLines="2" />
+
+</RelativeLayout>
