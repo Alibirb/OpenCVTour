@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.ActionBar;
@@ -23,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 
@@ -43,6 +46,11 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 	private Menu _context_menu;
 	private ArrayList<String> _images_selected = new ArrayList<>();
+
+	private MediaPlayer _player = null;
+	private MediaRecorder _recorder = null;
+	private boolean _recording = false;
+	private boolean _playing = false;
 
 	private LocationService.ServiceConnection _connection;
 	private boolean _service_is_bound = false;
@@ -222,7 +230,6 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		((EditText) findViewById(R.id.edit_tour_item_name)).setText(_tour_item.getName());
 		((EditText) findViewById(R.id.edit_tour_item_description)).setText(_tour_item.getDescription());
 		((EditText) findViewById(R.id.edit_tour_item_directions)).setText(_tour_item.getDirections());
-		/// TODO: handle audio
 
 		if(_tour_item.getLocation() != null) {
 			Log.i(TAG, "loading GPS coordinates...");
@@ -231,6 +238,13 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 
 		findViewById(R.id.image_picker).setOnClickListener(this);
 		findViewById(R.id.get_current_gps_location).setOnClickListener(this);
+		findViewById(R.id.record_audio).setOnClickListener(this);
+		findViewById(R.id.play_audio).setOnClickListener(this);
+
+		if(_tour_item.hasAudioFile())
+			findViewById(R.id.play_audio).setVisibility(View.VISIBLE);
+		else
+			findViewById(R.id.play_audio).setVisibility(View.INVISIBLE);
 
 		bindLocationService();
 
@@ -284,6 +298,28 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 				_photo_uri = Utilities.takePicture(this, false);
 				break;
 
+			case R.id.record_audio: {
+				_recording = !_recording;
+				if(_recording) {
+					((TextView) v).setText("stop recording");
+					startRecording();
+				} else {
+					((TextView) v).setText("record audio");
+					stopRecording();
+				}
+				break;
+			}
+			case R.id.play_audio: {
+				_playing = !_playing;
+				if(_playing) {
+					((TextView) v).setText("stop playing");
+					startPlaying();
+				} else {
+					((TextView) v).setText("play audio");
+					stopPlaying();
+				}
+				break;
+			}
 			case R.id.get_current_gps_location: {
 				Location location = _connection.getService().getCurrentLocation();
 				if (location == null) {
@@ -309,6 +345,56 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 			GridView gridview = (GridView) findViewById(R.id.gridview);
 			((TourItemImageAdapter) gridview.getAdapter()).notifyDataSetChanged();
 		}
+	}
+
+	private void startPlaying() {
+		_player = new MediaPlayer();
+		try {
+			_player.setDataSource(_tour_item.getAudioFilepath());
+			_player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+				@Override
+				public void onCompletion(MediaPlayer mp) {
+					((TextView) findViewById(R.id.play_audio)).setText("play audio");
+					_playing = false;
+					stopPlaying();
+				}
+			});
+			_player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+				@Override
+				public void onPrepared(MediaPlayer mp) {
+					mp.start();
+				}
+			});
+			_player.prepareAsync();
+		} catch (IOException e) {
+			Log.e(TAG, "prepare() failed");
+		}
+	}
+	private void stopPlaying() {
+		_player.release();
+		_player = null;
+	}
+
+	private void startRecording() {
+		_recorder = new MediaRecorder();
+		_recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+		_recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+		_recorder.setOutputFile(_tour_item.getAudioFilepath());
+		_recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+		try {
+			_recorder.prepare();
+		} catch (IOException e) {
+			Log.e(TAG, "prepare() failed");
+		}
+
+		_recorder.start();
+	}
+	private void stopRecording() {
+		_recorder.stop();
+		_recorder.release();
+		_recorder = null;
+		findViewById(R.id.play_audio).setVisibility(View.VISIBLE);
 	}
 
 	@Override

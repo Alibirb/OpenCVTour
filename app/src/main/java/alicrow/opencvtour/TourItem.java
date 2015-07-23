@@ -21,7 +21,7 @@ public class TourItem {
 	private String _directions;
 	private String _main_image_filepath = "";    /// filepath of the TourItem's main image, to be displayed in thumbnails
 	private ArrayList<String> _image_filepaths = new ArrayList<>();
-	/// TODO: audio file
+	private String _audio_filepath = "";
 	private Location _location;
 	private Tour _tour;
 
@@ -77,6 +77,9 @@ public class TourItem {
 			data.put("location", gps_data);
 		}
 
+		if(hasAudioFile())
+			data.put("audio_filename", _audio_filepath.substring(_audio_filepath.lastIndexOf("/")+1));
+
 		return data;
 	}
 	public void loadFromMap(Map<String,Object> data) {
@@ -97,6 +100,11 @@ public class TourItem {
 		if(data.containsKey("location") && data.get("location") != null) {
 			setLocation((Map<String, Object>) data.get("location"));
 		}
+
+		if(data.containsKey("audio_filename") && data.get("audio_filename") != null) {
+			setAudioFilepath((new File(_tour.getDirectory(), (String) data.get("audio_filename"))).getPath());
+		} else
+			setAudioFilepath((new File(_tour.getDirectory(), getName() + getId() + ".3gp")).getPath());
 	}
 
 
@@ -178,6 +186,18 @@ public class TourItem {
 			_location.setLatitude((Double) gps_data.get("latitude"));
 		if(gps_data.containsKey("longitude"))
 			_location.setLongitude((Double) gps_data.get("longitude"));
+	}
+
+	public void setAudioFilepath(String path) {
+		_audio_filepath = path;
+	}
+	public String getAudioFilepath() {
+		return _audio_filepath;
+	}
+	public boolean hasAudioFile() {
+		if(_audio_filepath == null || _audio_filepath.equals(""))
+			return false;
+		return new File(_audio_filepath).exists();
 	}
 
 }

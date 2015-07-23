@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -29,6 +30,7 @@ import org.opencv.android.OpenCVLoader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +46,8 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 	private ArrayList<TourItem> _remaining_items;
 	private TourItem _current_item;
 	private Location _current_location;
+
+	private MediaPlayer _player = null;
 
 	private Uri _photo_uri;
 
@@ -279,6 +283,9 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 		if(!isChangingConfigurations())
 			if(_connection != null && _connection.getService() != null)
 				_connection.getService().stopLocationUpdates();
+
+		if(_player != null)
+			stopAudio();
 	}
 
 	@Override
@@ -339,7 +346,30 @@ public class FollowTourActivity extends Activity implements View.OnClickListener
 
 		if(detected_item != null && (!current_tour.getEnforceOrder() || getNextTourItem() == detected_item)) {
 			setCurrentItem(detected_item);
+			if(detected_item.hasAudioFile())
+				playAudio();
 		}
+	}
+
+	private void playAudio() {
+		_player = new MediaPlayer();
+		try {
+			_player.setDataSource(_current_item.getAudioFilepath());
+			_player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+				@Override
+				public void onPrepared(MediaPlayer mp) {
+					mp.start();
+				}
+			});
+			_player.prepareAsync();
+		} catch (IOException e) {
+			Log.e(TAG, "prepare() failed");
+		}
+	}
+
+	private void stopAudio() {
+		_player.release();
+		_player = null;
 	}
 
 	/// Filters out any TourItems not within threshold meters of current_location
