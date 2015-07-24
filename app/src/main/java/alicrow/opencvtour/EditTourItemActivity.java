@@ -8,8 +8,8 @@ import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
-import android.app.ActionBar;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -32,7 +32,7 @@ import java.util.ArrayList;
 /*
  * Activity to edit an item in a tour.
  */
-public class EditTourItemActivity extends Activity implements View.OnClickListener, AbsListView.MultiChoiceModeListener {
+public class EditTourItemActivity extends AppCompatActivity implements View.OnClickListener, AbsListView.MultiChoiceModeListener {
 
 	private static final String TAG = "EditTourItemActivity";
 
@@ -202,17 +202,6 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		Log.d(TAG, "onCreate called");
 		super.onCreate(savedInstanceState);
 
-		/// custom action bar
-		final View actionBarView = getLayoutInflater().inflate(R.layout.actionbar_custom_view_done, null);
-		final ActionBar actionbar = getActionBar();
-		if(actionbar == null) {
-			Log.e(TAG, "could not retrieve action bar");
-		} else {
-			actionbar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM, ActionBar.DISPLAY_SHOW_CUSTOM | ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_SHOW_TITLE);
-			actionbar.setCustomView(actionBarView, new ActionBar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-		}
-		actionBarView.findViewById(R.id.actionbar_done).setOnClickListener(this);
-
 		setContentView(R.layout.activity_edit_tour_item);
 
 		/// Find the TourItem we're editing, and display its current values.
@@ -221,11 +210,11 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 		_tour_item = Tour.getCurrentTour().getTourItems().get(position_in_tour);
 
 		/// GridView of images in the TourItem
-		GridView gridview = (GridView) findViewById(R.id.gridview);
+		ExpandableHeightGridView gridview = (ExpandableHeightGridView) findViewById(R.id.gridview);
 		gridview.setAdapter(new TourItemImageAdapter(_tour_item));
 		gridview.setChoiceMode(GridView.CHOICE_MODE_MULTIPLE_MODAL);
 		gridview.setMultiChoiceModeListener(this);
-		gridview.setDrawSelectorOnTop(true);
+		gridview.setExpanded(true);
 
 		((EditText) findViewById(R.id.edit_tour_item_name)).setText(_tour_item.getName());
 		((EditText) findViewById(R.id.edit_tour_item_description)).setText(_tour_item.getDescription());
@@ -256,25 +245,6 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 				_images_selected = savedInstanceState.getStringArrayList("_images_selected");
 			}
 		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.menu_edit_tour_item, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks
-		int id = item.getItemId();
-
-		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings) {
-			return true;
-		}
-
-		return super.onOptionsItemSelected(item);
 	}
 
 	private void applyChanges() {
@@ -331,9 +301,6 @@ public class EditTourItemActivity extends Activity implements View.OnClickListen
 				}
 				break;
 			}
-			case R.id.actionbar_done:
-				applyChanges();
-				break;
 		}
 	}
 

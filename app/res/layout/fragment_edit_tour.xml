@@ -1,80 +1,83 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingLeft="@dimen/activity_horizontal_margin"
-                android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:paddingBottom="@dimen/activity_vertical_margin"
-                tools:context="alicrow.opencvtour.EditTourFragment"
-				android:orientation="vertical" >
-
-	<Button
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:text="Follow tour"
-		android:id="@+id/follow_tour"/>
-
-	<TextView
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="Name:"/>
-	<EditText
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:id="@+id/tour_name"
-	    android:inputType="text"
-		/>
-
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/tour_items"
-	    android:text="Tour items"
-		/>
-
-	<CheckBox
-		android:id="@+id/enable_gps"
-		android:text="enable GPS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+<ScrollView
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	tools:context="alicrow.opencvtour.EditTourFragment"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
 
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:orientation="horizontal"
-		android:id="@+id/range_selection_line">
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="@dimen/activity_vertical_margin"
+		android:paddingBottom="@dimen/activity_vertical_margin"
+		android:orientation="vertical" >
+
+		<Button
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="Follow tour"
+			android:id="@+id/follow_tour"/>
+
 		<TextView
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text="Only check items within "/>
+			android:text="Name:"/>
 		<EditText
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:id="@+id/tour_name"
+			android:inputType="text" />
+
+		<Button
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:id="@+id/item_range"
-			android:inputType="numberDecimal" />
-		<TextView
+			android:id="@+id/tour_items"
+			android:text="Tour items" />
+
+		<CheckBox
+			android:id="@+id/enable_gps"
+			android:text="enable GPS"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" />
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="horizontal"
+			android:id="@+id/range_selection_line">
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="Only check items within "/>
+			<EditText
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:id="@+id/item_range"
+				android:inputType="numberDecimal" />
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text=" meters"/>
+		</LinearLayout>
+
+		<CheckBox
+			android:id="@+id/enforce_order"
+			android:text="Tour items must be visited in order"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" />
+
+		<Button
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text=" meters"/>
+			android:id="@+id/save_tour"
+			android:text="Save tour"/>
+		<Button
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/share_tour"
+			android:text="Share tour"/>
+
 	</LinearLayout>
-
-	<CheckBox
-		android:id="@+id/enforce_order"
-		android:text="Tour items must be visited in order"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content" />
-
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/save_tour"
-		android:text="Save tour"/>
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/share_tour"
-		android:text="Share tour"/>
-
-
-</LinearLayout>
+</ScrollView>

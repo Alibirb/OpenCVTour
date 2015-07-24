@@ -1,96 +1,97 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingLeft="@dimen/activity_horizontal_margin"
-                android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:paddingBottom="@dimen/activity_vertical_margin"
-                tools:context="alicrow.opencvtour.EditTourItemActivity"
-              android:orientation="vertical">
+<ScrollView
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	tools:context="alicrow.opencvtour.EditTourItemActivity"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
 
 	<LinearLayout
 		android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:orientation="horizontal" >
+		android:layout_height="wrap_content"
+		android:paddingLeft="@dimen/activity_horizontal_margin"
+		android:paddingRight="@dimen/activity_horizontal_margin"
+		android:paddingTop="@dimen/activity_vertical_margin"
+		android:paddingBottom="@dimen/activity_vertical_margin"
+		android:orientation="vertical">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="horizontal" >
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="name"/>
+			<EditText
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:id="@+id/edit_tour_item_name"
+				android:inputType="text"/>
+		</LinearLayout>
+
 		<TextView
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text="name"/>
+			android:text="description"/>
 		<EditText
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:id="@+id/edit_tour_item_name"
+			android:id="@+id/edit_tour_item_description"
 			android:inputType="text"/>
-	</LinearLayout>
 
-
-
-	<TextView
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="description"/>
-	<EditText
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:id="@+id/edit_tour_item_description"
-		android:inputType="text"/>
-
-	<TextView
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="directions"/>
-	<EditText
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:id="@+id/edit_tour_item_directions"
-		android:inputType="text"/>
-
-	<LinearLayout
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content">
-		<Button
-			android:id="@+id/record_audio"
+		<TextView
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text="record audio" />
+			android:text="directions"/>
+		<EditText
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:id="@+id/edit_tour_item_directions"
+			android:inputType="text"/>
+
+		<LinearLayout
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content">
+			<Button
+				android:id="@+id/record_audio"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="record audio" />
+			<Button
+				android:id="@+id/play_audio"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="play audio"/>
+		</LinearLayout>
+
 		<Button
-			android:id="@+id/play_audio"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text="play audio"/>
+			android:text="add image"
+			android:id="@+id/image_picker" />
+
+		<alicrow.opencvtour.ExpandableHeightGridView
+			android:id="@+id/gridview"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:columnWidth="90dp"
+			android:numColumns="auto_fit"
+			android:verticalSpacing="4dp"
+			android:horizontalSpacing="4dp"
+			android:stretchMode="columnWidth"
+			android:gravity="center"
+			/>
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/tour_item_location"/>
+
+		<Button
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/get_current_gps_location"
+			android:text="Get current GPS location"/>
+
 	</LinearLayout>
-
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="add image"
-		android:id="@+id/image_picker" />
-
-	<GridView
-		android:id="@+id/gridview"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:columnWidth="90dp"
-		android:numColumns="auto_fit"
-		android:verticalSpacing="4dp"
-		android:horizontalSpacing="4dp"
-		android:stretchMode="columnWidth"
-		android:gravity="center"
-	    />
-
-
-
-	<TextView
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/tour_item_location"/>
-
-	<Button
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/get_current_gps_location"
-		android:text="Get current GPS location"/>
-
-
-</LinearLayout>
+</ScrollView>

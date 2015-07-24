@@ -2,11 +2,12 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
              android:layout_width="match_parent"
              android:layout_height="match_parent"
-             android:foreground="?android:attr/activatedBackgroundIndicator">
+             android:background="?android:attr/activatedBackgroundIndicator">
 
 	<alicrow.opencvtour.SquareImageView
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:id="@+id/image" />
+		android:id="@+id/image"
+		android:layout_margin="4dp" />
 
 </FrameLayout>
