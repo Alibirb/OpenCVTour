@@ -7,7 +7,10 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
@@ -24,7 +27,6 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -42,7 +44,7 @@ public class Utilities {
 
 	public static final int REQUEST_IMAGE_CAPTURE = 1;
 
-	private static final LruCache<String, Bitmap> _bitmap_cache = new LruCache<>(64);
+	private static final LruCache<String, Bitmap> _bitmap_cache = new LruCache<>(32);
 
 	/**
 	 * Creates and returns a Bitmap of the image at the given filepath, scaled down to fit the area the Bitmap will be displayed in
@@ -54,11 +56,27 @@ public class Utilities {
 	public static Bitmap decodeSampledBitmap(String image_file_path, int reqWidth, int reqHeight) {
 		Log.v(TAG, "creating bitmap for " + image_file_path);
 
+		long start = android.os.SystemClock.uptimeMillis();
+
 		final BitmapFactory.Options options = getBitmapBounds(image_file_path);
 
 		options.inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, reqWidth, reqHeight);
 		options.inJustDecodeBounds = false;
-		return fixOrientation(BitmapFactory.decodeFile(image_file_path, options), image_file_path);
+
+		Bitmap sampled = BitmapFactory.decodeFile(image_file_path, options);
+		long sampled_time = android.os.SystemClock.uptimeMillis();
+		Log.v(TAG, "created sampled bitmap for " + image_file_path + ", took " + (sampled_time-start) + "ms");
+
+		Bitmap oriented = fixOrientation(sampled, image_file_path);
+		long orientation_fixed_time = android.os.SystemClock.uptimeMillis();
+		Log.v(TAG, "fixed orientation for " + image_file_path + ", took " + (orientation_fixed_time-sampled_time) + "ms");
+
+		Bitmap final_bitmap = ThumbnailUtils.extractThumbnail(oriented, reqWidth, reqHeight);
+		long end = android.os.SystemClock.uptimeMillis();
+		Log.v(TAG, "finished resizing bitmap for " + image_file_path + ", took " + (end-orientation_fixed_time) + "ms");
+		Log.v(TAG, "finished creating bitmap for " + image_file_path + ", took " + (end-start) + "ms");
+
+		return final_bitmap;
 	}
 
 	/**
@@ -176,43 +194,101 @@ public class Utilities {
 		}
 	}
 
-	public static void loadBitmap(ImageView view, String filename, int width, int height) {
+	static class AsyncDrawable extends BitmapDrawable {
+		private final WeakReference<BitmapWorkerTask> bitmapWorkerTaskReference;
+
+		public AsyncDrawable(Resources res, Bitmap bitmap, BitmapWorkerTask bitmapWorkerTask) {
+			super(res, bitmap);
+			bitmapWorkerTaskReference = new WeakReference<>(bitmapWorkerTask);
+		}
+
+		public BitmapWorkerTask getBitmapWorkerTask() {
+			return bitmapWorkerTaskReference.get();
+		}
+	}
+
+	public static void loadBitmap(ImageView view, String filename, int width, int height, Context context) {
 		ReducedBitmapInfo info = new ReducedBitmapInfo(filename, width, height);
-		Log.v(TAG, "loading bitmap");
+		Log.v(TAG, "loading bitmap " + info.toString());
 
 		Bitmap bitmap = _bitmap_cache.get(info.toString());
-		if(bitmap == null) {
-			Utilities.BitmapWorkerTask task = new Utilities.BitmapWorkerTask(view, width, height);
-			task.execute(filename);
-			view.setImageResource(R.drawable.loading_thumbnail);
-		} else {
+		if(bitmap != null) {
 			Log.v(TAG, "bitmap already created");
 			view.setImageBitmap(bitmap);
+		} else {
+
+			File cached_image_file = new File(context.getExternalCacheDir(), info.toString().substring(Tour.getToursDirectory(context).getPath().length()) + ".jpg");
+			cached_image_file.getParentFile().mkdir();
+
+			Utilities.BitmapWorkerTask task = new Utilities.BitmapWorkerTask(view, width, height, cached_image_file);
+
+			Bitmap placeholder_bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.loading_thumbnail);
+
+			final AsyncDrawable asyncDrawable = new AsyncDrawable(context.getResources(), placeholder_bitmap, task);
+			view.setImageDrawable(asyncDrawable);
+			task.execute(filename);
 		}
+	}
+
+	private static BitmapWorkerTask getBitmapWorkerTask(ImageView imageView) {
+		if (imageView != null) {
+			final Drawable drawable = imageView.getDrawable();
+			if (drawable instanceof AsyncDrawable) {
+				final AsyncDrawable asyncDrawable = (AsyncDrawable) drawable;
+				return asyncDrawable.getBitmapWorkerTask();
+			}
+		}
+		return null;
 	}
 
 	public static class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
 		private final WeakReference<ImageView> imageViewReference;
-		private static final HashMap<ImageView, AsyncTask> _tasks = new HashMap<>();
 		private int _width, _height;
+		private File _cached_image_file;
 
-		public BitmapWorkerTask(ImageView imageView, int width, int height) {
+		public BitmapWorkerTask(ImageView imageView, int width, int height, File cached_image_file) {
 			// Use a WeakReference to ensure the ImageView can be garbage collected
 			imageViewReference = new WeakReference<>(imageView);
 			Log.v(TAG, "Creating BitmapWorkerTask");
-			_tasks.put(imageView, this);
 			_width = width;
 			_height = height;
+			_cached_image_file = cached_image_file;
 		}
 
 		// Decode image in background.
 		@Override
 		protected Bitmap doInBackground(String... params) {
 			try {
-				String image_filename = params[0];
+				String image_filepath = params[0];
+				Bitmap image;
 
-				Bitmap image = Utilities.decodeSampledBitmap(image_filename, _width, _height);
-				addToCache(new ReducedBitmapInfo(image_filename, _width, _height), image);
+				if(_cached_image_file != null && _cached_image_file.exists()) {
+					Log.v(TAG, "loading cached bitmap file " + _cached_image_file.getPath());
+					long start = android.os.SystemClock.uptimeMillis();
+					image = BitmapFactory.decodeFile(_cached_image_file.getAbsolutePath());
+					long end = android.os.SystemClock.uptimeMillis();
+					Log.v(TAG, "finished loading cached bitmap file " + _cached_image_file.getPath() + ", took " + (end-start) + "ms");
+				} else {
+					image = Utilities.decodeSampledBitmap(image_filepath, _width, _height);
+
+					/// Save this thumbnail to disk, so we don't need to run sampling for it again.
+					FileOutputStream out = null;
+					try {
+						out = new FileOutputStream(_cached_image_file);
+						image.compress(Bitmap.CompressFormat.JPEG, 97, out);
+					} catch (Exception e) {
+						e.printStackTrace();
+					} finally {
+						try {
+							if (out != null) {
+								out.close();
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				addToCache(new ReducedBitmapInfo(image_filepath, _width, _height), image);
 				return image;
 			} catch(Exception e) {
 				Log.e(TAG, e.toString());
@@ -224,17 +300,16 @@ public class Utilities {
 		@Override
 		protected void onPostExecute(Bitmap bitmap) {
 			if (isCancelled()) {
+				Log.d(TAG, "BitmapWorkerTask was canceled");
+				bitmap.recycle();
 				bitmap = null;
 			}
 
-			if (imageViewReference != null) {
+			if (imageViewReference != null && bitmap != null) {
 				final ImageView imageView = imageViewReference.get();
-				final AsyncTask bitmapWorkerTask = _tasks.get(imageView);
+				final BitmapWorkerTask bitmapWorkerTask = getBitmapWorkerTask(imageView);
 				if (this == bitmapWorkerTask && imageView != null) {
-					if(bitmap == null)
-						imageView.setImageResource(R.drawable.image_not_found);
-					else
-						imageView.setImageBitmap(bitmap);
+					imageView.setImageBitmap(bitmap);
 				}
 			}
 		}
@@ -252,12 +327,11 @@ public class Utilities {
 
 	public static Uri createImageFile(Context context, boolean is_temp) throws IOException {
 		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-		String image_filename = "JPEG_" + timestamp + "_";
 		File file;
 		if(is_temp)
-			file = new File(context.getExternalCacheDir(), image_filename + ".jpg");
+			file = new File(context.getExternalCacheDir(), "temp" + ".jpg");
 		else
-			file = new File(Tour.getCurrentTour().getDirectory(), image_filename + ".jpg");
+			file = new File(Tour.getCurrentTour().getDirectory(), timestamp + ".jpg");
 		return Uri.fromFile(file);
 	}
 

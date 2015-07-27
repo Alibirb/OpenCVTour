@@ -134,7 +134,7 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 			if(item.hasMainImage()) {
 				String image_filepath = item.getMainImageFilepath();
 				ImageView image_view = holder._thumbnail;
-				Utilities.loadBitmap(image_view, image_filepath, Utilities.dp_to_px(40), Utilities.dp_to_px(40));
+				Utilities.loadBitmap(image_view, image_filepath, Utilities.dp_to_px(40), Utilities.dp_to_px(40), getActivity());
 			} else
 				holder._thumbnail.setImageResource(R.drawable.default_thumbnail);
 

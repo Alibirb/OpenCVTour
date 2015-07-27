@@ -106,8 +106,8 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 			}
 
 			String image_filename = _item.getImageFilepaths().get(position);
-			int column_width = ((GridView) parent).getRequestedColumnWidth();
-			Utilities.loadBitmap(image_view, image_filename, column_width, column_width);
+			int column_width = ((GridView) parent).getRequestedColumnWidth() - Utilities.dp_to_px(8);    /// 8dp padding;
+			Utilities.loadBitmap(image_view, image_filename, column_width, column_width, EditTourItemActivity.this);
 
 			return frame_layout;
 		}
