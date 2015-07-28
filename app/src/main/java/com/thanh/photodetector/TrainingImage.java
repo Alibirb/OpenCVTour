@@ -1,9 +1,13 @@
 package com.thanh.photodetector;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
+
+import android.location.Location;
+import android.media.ExifInterface;
 
 public class TrainingImage {
 	private String path_id;
@@ -11,6 +15,7 @@ public class TrainingImage {
 	private Mat image;
 	private MatOfKeyPoint key_points;
 	private Mat descriptors;
+	private Location location;
 	
 	public TrainingImage(){}
 	
@@ -35,6 +40,27 @@ public class TrainingImage {
 		tour_id = tour_item_id;
 		image = given_image;
 		descriptors = given_descriptors;
+		addLocation(image_path);
+	}
+	
+	public void addLocation(String path){
+		try {
+			ExifInterface exif = new ExifInterface(path);
+			float [] latlong = new float[2];
+			boolean isAvailable= exif.getLatLong(latlong);
+			Location loc = new Location(" ");
+			if (isAvailable){
+				float latitude = latlong[0];
+				float longitude = latlong[1];
+				loc.setLatitude(latitude);
+				loc.setLongitude(longitude);
+				
+				location = loc;
+			}			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void setImage(Mat new_image){
@@ -85,6 +111,10 @@ public class TrainingImage {
 	
 	public MatOfKeyPoint keyPoints(){
 		return key_points;
+	}
+
+	public Location location(){
+		return location;
 	}
 	
 }
