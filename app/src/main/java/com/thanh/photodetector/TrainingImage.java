@@ -21,16 +21,7 @@ public class TrainingImage {
 	
 	public TrainingImage(String image_path, long tour_item_id, Mat	given_image)
 	{
-		path_id = image_path;
-		tour_id = tour_item_id;
-		image = given_image;
-	}
-	
-	public TrainingImage(String image_path, Mat	given_image, Mat given_descriptors)
-	{
-		path_id = image_path;
-		image = given_image;
-		descriptors = given_descriptors;
+		this(image_path, tour_item_id, given_image, null);
 	}
 	
 	public TrainingImage(String image_path, long tour_item_id, 
