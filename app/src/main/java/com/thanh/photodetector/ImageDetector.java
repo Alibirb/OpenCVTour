@@ -62,7 +62,7 @@ public class ImageDetector {
 		dMatcher= DescriptorMatcher.create
 				(matcher_type);
 		training_library= new ArrayList<TrainingImage>();
-		filter_ratio = 1.25;
+		filter_ratio = 5;
 	}
 
 	public void addToLibrary(String image_path, long tour_item_id)
@@ -330,12 +330,15 @@ public class ImageDetector {
 		if (secondBestMatch == null){
 			return bestMatch;
 		}
-		else if (hm.get(bestMatch) > filter_ratio*hm.get(secondBestMatch)){
-			return bestMatch;
-		}
-		else{
-			Log.i(TAG, "Found no best match for the query image!");
-			return null;
+		else{ 
+			int diff = hm.get(bestMatch)-hm.get(secondBestMatch) ;
+			if ( diff * diff > filter_ratio * hm.get(bestMatch)){
+				return bestMatch;
+			}
+			else{
+				Log.i(TAG, "Found no best match for the query image!");
+				return null;
+			}
 		}
 	}
 
