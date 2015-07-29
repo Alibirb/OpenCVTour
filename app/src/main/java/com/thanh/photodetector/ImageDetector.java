@@ -35,26 +35,62 @@ import android.location.Location;
 import android.util.Log;
 
 public class ImageDetector {
-	// Declare objects that support the process of images detecting
+	/*
+	 * Declare objects that support the process of images detecting
+	 */
 	private FeatureDetector fDetector;
 	private DescriptorExtractor dExtractor;
 	private DescriptorMatcher dMatcher;
 
-    double filter_ratio;
+	/*
+	 * Variables that support drawCurrentMatches method
+	 */
+	TrainingImage CURRENT_QUERY_IMAGE;
+	TrainingImage CURRENT_RESULT_IMAGE;
+	MatOfDMatch CURRENT_GOOD_MATCHES;
 
-	// tag of messages printed to LogCat
+	/*
+	 *  Maximum length of the sides of images.
+	 *  Used to scale down images before storing
+	 */
+	int max_side;
+	
+	/*
+	 * Threshold used for 2nd-best filter in findBestMatch method
+	 */
+    double filter_ratio;
+    
+    /*
+	 * Threshold used for location filter in locationFilter method
+	 */
+    double distance_bound;
+
+	/*
+	 * Tag for messages printed to LogCat
+	 */
 	protected static final String TAG = "ImageDetector";
 
-	// tag of Error messages printed to LogCat
+	/*
+	 * Tag for Error messages printed to LogCat
+	 */
 	protected static final String ERROR = "Error in ImageDetector";
 
-	// A list of all training photos
+	/*
+	 * List of all train images
+	 */
 	private List<TrainingImage> training_library;
 
+	/*
+	 * Default constructor.
+	 * Uses FAST detector, ORB extractor, and BRUTEFORCE_HAMMINGLUT matcher.
+	 */
 	public ImageDetector() {
 		this(FeatureDetector.FAST, DescriptorExtractor.ORB, DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 	}
 
+	/*
+	 * Constructor that uses detecting algorithms specified by the parameters
+	 */
 	public ImageDetector(int detector_type, int extractor_type, int matcher_type)
 	{
 		fDetector = FeatureDetector.create
@@ -64,17 +100,28 @@ public class ImageDetector {
 		dMatcher= DescriptorMatcher.create
 				(matcher_type);
 		training_library= new ArrayList<TrainingImage>();
+		
+		// Specific values selected after experimenting with different data sets
+		max_side = 300;
 		filter_ratio = 5;
+		distance_bound = 50;
 	}
 
+	/*
+	 * Method that adds a new image to the train library
+	 * @param image_path the path of the image
+	 * @param tour_item_id the id of the tour item (whom the image belongs to)
+	 */
 	public void addToLibrary(String image_path, long tour_item_id)
 	{
 		Mat imgDescriptor;
 		TrainingImage training_img;
 		File descriptor_file = new File(image_path + ".descriptors.yaml");
+		// Check if the image's features have already been extracted
 		if(!descriptor_file.exists()) {
 			Mat img = Imgcodecs.imread(image_path);
-			Mat resized_img = resize(img);  // scale down the image
+			// reduce the image's size to increase the runtime and save the memory
+			Mat resized_img = resize(img);  
 			training_img = new TrainingImage(image_path, tour_item_id, resized_img);
 			imgDescriptor = imgDescriptor(training_img);
 		} else {
@@ -97,6 +144,12 @@ public class ImageDetector {
 		dMatcher.clear();
 	}
 
+	/*
+	 * Method that identifies the tour item the given image belongs to
+	 * @param iamge_path the path of the image used for identification
+	 * @param item_ids the list of qualified items
+	 * @return the id
+	 */
 	public long identifyObject(String image_path, List<Long> item_ids)
 	{
 		TrainingImage result = detectPhoto(image_path, item_ids);
@@ -105,22 +158,26 @@ public class ImageDetector {
 		return result.tourID();
 	}
 
+	/*
+	 * Methods that resize a given image to certain size
+	 * The size is specified by the class variable max_side 
+	 * @param src_image the image to be resized
+	 * @return the resized image
+	 */
 	public Mat resize(Mat src_img)
 	{
 		// scale down images
 		double h = src_img.size().height;
 		double w = src_img.size().width;
-		double multiplier = 300/Math.max(h,w);
+		double multiplier = max_side/Math.max(h,w);
 		Size size= new Size(w*multiplier, h*multiplier);
 		Imgproc.resize(src_img, src_img, size);
 		return src_img;
 	}
 
-	// variables for drawCurrentMatches method
-	TrainingImage CURRENT_QUERY_IMAGE;
-	TrainingImage CURRENT_RESULT_IMAGE;
-	MatOfDMatch CURRENT_GOOD_MATCHES;
-
+	/*
+	 * 
+	 */
 	public TrainingImage detectPhoto(String query_path){
 		List<Long> ids = new ArrayList<>();
 		for(TrainingImage img : training_library) {
@@ -130,7 +187,12 @@ public class ImageDetector {
 		return detectPhoto(query_path, ids);
 	}
 
-	// Method that detects a given image based on the training library
+	/*
+	 * Method that detects a given image based on the training library
+	 * @param query_path the path of the image to be detected
+	 * @param item_ids the list of qualified items
+	 * @return the best match image
+	 */
 	public TrainingImage detectPhoto(String query_path, List<Long> item_ids){
 		Mat img = Imgcodecs.imread(query_path);
 		Mat resized_img = resize(img); // scale down the query image
@@ -162,6 +224,9 @@ public class ImageDetector {
 		return bestMatch;
 	}
 
+	/*
+	 * 
+	 */
 	private List<DMatch> filterByItem(List<DMatch> matches, List<Long> item_ids) {
 		List<DMatch> filtered_matches = new ArrayList<>();
 		for(DMatch match : matches) {
@@ -171,12 +236,19 @@ public class ImageDetector {
 		return filtered_matches;
 	}
 
+	/*
+	 * Method that filters the matches between the query image and the best match image
+	 * @param good_matches the total matches based on the training library
+	 * @param bestMatch the image that has the highest number of matches
+	 * @return a MatOfDMatch of the matches of the best match image
+	 */
 	private MatOfDMatch getCurrentGoodMatches(List<DMatch> good_matches,TrainingImage bestMatch)
 	{
 		List<DMatch> matches_of_bestMatch = new ArrayList<DMatch>();
 		// loop to filter matches of train images, which are not the bestMatch image
 		for(DMatch aMatch: good_matches){
 			TrainingImage trainImg = training_library.get(aMatch.imgIdx);
+			// Check if the match result is the bestMatch image
 			if (trainImg == bestMatch)
 			{
 				matches_of_bestMatch.add(aMatch);
@@ -187,6 +259,11 @@ public class ImageDetector {
 		return result;
 	}
 
+	/*
+	 * Method that creates an Mat image of the query and result images
+	 * @param n the number of matches to be visualized in the image
+	 * @return the image
+	 */
 	public Mat drawCurrentMatches(int n)
 	{
 		Mat img1 = CURRENT_QUERY_IMAGE.image();
@@ -200,6 +277,12 @@ public class ImageDetector {
 		return result;
 	}
 
+	/*
+	 * Method that sorts and returns submat of a MatOfDMatch
+	 * @param the mat of matches
+	 * @param start the starting index of matches to be returned
+	 * @param end the ending index of matches to be returned 
+	 */
 	public MatOfDMatch sortedKMatches(MatOfDMatch matches, int start, int end)
 	{
 		List<DMatch> list = matches.toList();
@@ -219,6 +302,10 @@ public class ImageDetector {
 		return result;
 	}
 
+	/*
+	 * Method that returns a matrix of descriptors for a given image
+	 * Using rgb-descriptors
+	 */
 	public Mat imgDescriptor_rgb(TrainingImage train_img)
     {
     	Mat img = train_img.image();
@@ -227,17 +314,15 @@ public class ImageDetector {
 		MatOfKeyPoint imgKeyPoints = new MatOfKeyPoint();
 		fDetector.detect(img, imgKeyPoints);
 
-		// filter the best key points
-//		imgKeyPoints= topKeyPoints(imgKeyPoints, number_of_key_points);
-
 		Log.i(TAG, "imgKeyPoints size:  "+ imgKeyPoints.size());
 
-		// compute the descriptor from those key points
-		//Using RGB channels to describe
+		// Compute the descriptor from those key points
+		// Using RGB channels to describe
 		Mat img_r = new Mat(img.rows(), img.cols(), CvType.CV_8UC1);
 		Mat img_g = new Mat(img.rows(), img.cols(), CvType.CV_8UC1);
 		Mat img_b = new Mat(img.rows(), img.cols(), CvType.CV_8UC1);
 		double[] rgb;
+		// assign R, G, B values to each image
 		for(int x=0; x < img.cols();x++){
 			for(int y=0; y < img.rows(); y++){
 				rgb = img.get(y,x);
@@ -253,17 +338,16 @@ public class ImageDetector {
 		dExtractor.compute(img_r,imgKeyPoints, imgDescriptor_r);
 		dExtractor.compute(img_g,imgKeyPoints, imgDescriptor_g);
 		dExtractor.compute(img_b,imgKeyPoints, imgDescriptor_b);
-//		Log.i(TAG, "imgDescriptor_r size:  "+ imgDescriptor_r.size());
-//		Log.i(TAG, "imgDescriptor_g size:  "+ imgDescriptor_g.size());
-//		Log.i(TAG, "imgDescriptor_b size:  "+ imgDescriptor_b.size());
 
 		Mat imgDescriptor_x3 = new Mat();
+		// Concatenate the R, G, B descriptors
 		List<Mat> lmat = Arrays.asList(
 				imgDescriptor_r.submat(0,imgDescriptor_r.rows(),0,16),
 				imgDescriptor_g.submat(0,imgDescriptor_g.rows(),0,16),
 				imgDescriptor_b.submat(0,imgDescriptor_b.rows(),0,16));
 		Core.hconcat(lmat, imgDescriptor_x3);
 		Log.i(TAG, "imgDescriptor_x3 size:  "+ imgDescriptor_x3.size());
+		
 		imgDescriptor = imgDescriptor_x3;
 		img_r.release();
 		img_g.release();
@@ -277,7 +361,9 @@ public class ImageDetector {
 		return imgDescriptor;
     }
 	
-	// Method that returns a matrix of descriptors for a given image
+	/*
+	 * Method that returns a matrix of descriptors for a given image
+	 */
 	public Mat imgDescriptor(TrainingImage train_img)
 	{
 		Mat img = train_img.image();
@@ -293,6 +379,9 @@ public class ImageDetector {
 		return imgDescriptor;
 	}
 
+	/*
+	 * 
+	 */
 	public Mat loadImageDescriptors(Map<String,Object> data) {
 		Mat m = new Mat((Integer) data.get("rows"),(Integer) data.get("columns"),(Integer) data.get("type"));
 		byte[] bytes = (byte[]) data.get("bytes");
@@ -300,6 +389,10 @@ public class ImageDetector {
 
 		return m;
 	}
+	
+	/*
+	 * 
+	 */
 	public Mat loadImageDescriptors(File file) {
 		try {
 			Log.d(TAG, "Attempting to load image descriptors from " + file.getName());
@@ -312,6 +405,10 @@ public class ImageDetector {
 			return null;
 		}
 	}
+	
+	/*
+	 * 
+	 */
 	public void saveImageDescriptors() {
 		for(TrainingImage image : training_library) {
 			Log.d(TAG, "saving " + image.pathID() + " to Map.");
@@ -337,8 +434,9 @@ public class ImageDetector {
 		}
 	}
 
-	HashMap<TrainingImage, Integer> CURRENT_MATCH_FREQUENCY;
-	// Method that finds the best match from a list of matches
+	/*
+	 * Method that finds the best match from a list of matches
+	 */
 	private TrainingImage findBestMatch(List<DMatch> good_matches, TrainingImage query_image)
 	{
 		HashMap<TrainingImage,Integer> hm= new HashMap<TrainingImage, Integer>();
@@ -353,10 +451,9 @@ public class ImageDetector {
 		}
 
     	// location filter
-    	HashMap<TrainingImage,Integer> filtered_hm = locationFilter(hm,query_image.location());
+    	HashMap<TrainingImage,Integer> filtered_hm = locationFilter(hm,query_image);
     	hm = filtered_hm;
     	
-		CURRENT_MATCH_FREQUENCY = hm;
 		// search for the image that matches the largest number of descriptors.
 		TrainingImage bestMatch= null;
 		TrainingImage secondBestMatch= null;
@@ -391,6 +488,7 @@ public class ImageDetector {
 			return bestMatch;
 		}
 		else{ 
+			// 2nd-best filter
 			int diff = hm.get(bestMatch)-hm.get(secondBestMatch) ;
 			if ( diff * diff > filter_ratio * hm.get(bestMatch)){
 				return bestMatch;
@@ -402,8 +500,15 @@ public class ImageDetector {
 		}
 	}
 
-    public HashMap<TrainingImage,Integer> locationFilter(HashMap<TrainingImage,Integer> hm, Location query_location)
+	/*
+	 * Method that filters the map of matches by their locations
+	 * @param hm the map of match images
+	 * @param query_image 
+	 * @return the map of images within the location bound
+	 */
+    public HashMap<TrainingImage,Integer> locationFilter(HashMap<TrainingImage,Integer> hm, TrainingImage query_image)
     {
+    	Location query_location = query_image.location();
     	if(query_location == null){
     		Log.i(TAG, "Image's location is not available");
     		return hm;
@@ -411,7 +516,7 @@ public class ImageDetector {
         	HashMap<TrainingImage,Integer> new_hm = new HashMap<TrainingImage,Integer>();
 	    	for(TrainingImage trainImg: hm.keySet()){
 	    		double distance = query_location.distanceTo(trainImg.location());
-	    		if(distance < 50){
+	    		if(distance < distance_bound){
 	    			int count = hm.get(trainImg);
 	    			new_hm.put(trainImg,count);
 	    		}
@@ -420,8 +525,10 @@ public class ImageDetector {
     	}
     }
     
-	// Method that displays the image and its features
-	// on the device's screen
+	/*
+	 * Method that draws the features of the image
+	 * @param rgba the image to be detected features and drawn to 
+	 */
 	public void drawFeatures(Mat rgba){
 		MatOfKeyPoint keyPoints = new MatOfKeyPoint();
 		Imgproc.cvtColor(rgba, rgba, Imgproc.COLOR_RGBA2RGB);
@@ -430,6 +537,11 @@ public class ImageDetector {
 		Imgproc.cvtColor(rgba, rgba, Imgproc.COLOR_RGB2RGBA);
 	}
 
+	/*
+	 * Method that draws the features of the image
+	 * @param rgba the image to be detected features and drawn to 
+	 * @param keyPoints the key points of the given image
+	 */
 	public void drawFeatures(Mat rgba,MatOfKeyPoint keyPoints){
 		Imgproc.cvtColor(rgba, rgba, Imgproc.COLOR_RGBA2RGB);
 		Features2d.drawKeypoints(rgba,keyPoints,rgba);
