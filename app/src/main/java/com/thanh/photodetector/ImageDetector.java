@@ -29,6 +29,7 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.yaml.snakeyaml.Yaml;
 
+import android.location.Location;
 import android.util.Log;
 
 public class ImageDetector {
@@ -149,7 +150,7 @@ public class ImageDetector {
 		list_of_matches = filterByItem(list_of_matches, item_ids);
 
 		// find the image that matches the most
-		TrainingImage bestMatch = findBestMatch(list_of_matches);
+		TrainingImage bestMatch = findBestMatch(list_of_matches, query_image);
 
 		// update variables for drawCurrentMatches method
 		CURRENT_QUERY_IMAGE = query_image;
@@ -278,7 +279,7 @@ public class ImageDetector {
 
 	HashMap<TrainingImage, Integer> CURRENT_MATCH_FREQUENCY;
 	// Method that finds the best match from a list of matches
-	private TrainingImage findBestMatch(List<DMatch> good_matches)
+	private TrainingImage findBestMatch(List<DMatch> good_matches, TrainingImage query_image)
 	{
 		HashMap<TrainingImage,Integer> hm= new HashMap<TrainingImage, Integer>();
 		// count the images matched
@@ -290,6 +291,11 @@ public class ImageDetector {
 				hm.put(trainImg, hm.get(trainImg)+1);
 			}
 		}
+
+    	// location filter
+    	HashMap<TrainingImage,Integer> filtered_hm = locationFilter(hm,query_image.location());
+    	hm = filtered_hm;
+    	
 		CURRENT_MATCH_FREQUENCY = hm;
 		// search for the image that matches the largest number of descriptors.
 		TrainingImage bestMatch= null;
@@ -333,6 +339,24 @@ public class ImageDetector {
 		}
 	}
 
+    public HashMap<TrainingImage,Integer> locationFilter(HashMap<TrainingImage,Integer> hm, Location query_location)
+    {
+    	if(query_location == null){
+    		Log.i(TAG, "Image's location is not available");
+    		return hm;
+    	}else{
+        	HashMap<TrainingImage,Integer> new_hm = new HashMap<TrainingImage,Integer>();
+	    	for(TrainingImage trainImg: hm.keySet()){
+	    		double distance = query_location.distanceTo(trainImg.location());
+	    		if(distance < 50){
+	    			int count = hm.get(trainImg);
+	    			new_hm.put(trainImg,count);
+	    		}
+	    	}
+	    	return new_hm;
+    	}
+    }
+    
 	// Method that displays the image and its features
 	// on the device's screen
 	public void drawFeatures(Mat rgba){
