@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
@@ -217,6 +219,64 @@ public class ImageDetector {
 		return result;
 	}
 
+	public Mat imgDescriptor_rgb(TrainingImage train_img)
+    {
+    	Mat img = train_img.image();
+    	Mat imgDescriptor = new Mat();
+    	// detect the matrix of key points of that image
+		MatOfKeyPoint imgKeyPoints = new MatOfKeyPoint();
+		fDetector.detect(img, imgKeyPoints);
+
+		// filter the best key points
+//		imgKeyPoints= topKeyPoints(imgKeyPoints, number_of_key_points);
+
+		Log.i(TAG, "imgKeyPoints size:  "+ imgKeyPoints.size());
+
+		// compute the descriptor from those key points
+		//Using RGB channels to describe
+		Mat img_r = new Mat(img.rows(), img.cols(), CvType.CV_8UC1);
+		Mat img_g = new Mat(img.rows(), img.cols(), CvType.CV_8UC1);
+		Mat img_b = new Mat(img.rows(), img.cols(), CvType.CV_8UC1);
+		double[] rgb;
+		for(int x=0; x < img.cols();x++){
+			for(int y=0; y < img.rows(); y++){
+				rgb = img.get(y,x);
+				img_r.put(y, x, new double[]{rgb[0]});
+				img_g.put(y, x, new double[]{rgb[1]});
+				img_b.put(y, x, new double[]{rgb[2]});				
+			}
+		}
+
+    	Mat imgDescriptor_r = new Mat();
+    	Mat imgDescriptor_g = new Mat();
+    	Mat imgDescriptor_b = new Mat();
+		dExtractor.compute(img_r,imgKeyPoints, imgDescriptor_r);
+		dExtractor.compute(img_g,imgKeyPoints, imgDescriptor_g);
+		dExtractor.compute(img_b,imgKeyPoints, imgDescriptor_b);
+//		Log.i(TAG, "imgDescriptor_r size:  "+ imgDescriptor_r.size());
+//		Log.i(TAG, "imgDescriptor_g size:  "+ imgDescriptor_g.size());
+//		Log.i(TAG, "imgDescriptor_b size:  "+ imgDescriptor_b.size());
+
+		Mat imgDescriptor_x3 = new Mat();
+		List<Mat> lmat = Arrays.asList(
+				imgDescriptor_r.submat(0,imgDescriptor_r.rows(),0,16),
+				imgDescriptor_g.submat(0,imgDescriptor_g.rows(),0,16),
+				imgDescriptor_b.submat(0,imgDescriptor_b.rows(),0,16));
+		Core.hconcat(lmat, imgDescriptor_x3);
+		Log.i(TAG, "imgDescriptor_x3 size:  "+ imgDescriptor_x3.size());
+		imgDescriptor = imgDescriptor_x3;
+		img_r.release();
+		img_g.release();
+		img_b.release();
+		imgDescriptor_r.release();
+		imgDescriptor_g.release();
+		imgDescriptor_b.release();
+		
+		train_img.setKeyPoints(imgKeyPoints);
+		train_img.setDescriptors(imgDescriptor);
+		return imgDescriptor;
+    }
+	
 	// Method that returns a matrix of descriptors for a given image
 	public Mat imgDescriptor(TrainingImage train_img)
 	{
