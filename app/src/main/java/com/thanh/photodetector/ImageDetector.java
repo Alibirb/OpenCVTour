@@ -1,12 +1,28 @@
+/*
+ * Copyright 2015 Lafayette College
+ *
+ * This file is part of OpenCVTour.
+ *
+ * OpenCVTour is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenCVTour is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenCVTour.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.thanh.photodetector;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,7 +34,6 @@ import java.util.Map;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
-import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
@@ -58,12 +73,12 @@ public class ImageDetector {
 	/*
 	 * Threshold used for 2nd-best filter in findBestMatch method
 	 */
-    double filter_ratio;
-    
-    /*
+	double filter_ratio;
+
+	/*
 	 * Threshold used for location filter in locationFilter method
 	 */
-    double distance_bound;
+	double distance_bound;
 
 	/*
 	 * Tag for messages printed to LogCat
@@ -307,10 +322,10 @@ public class ImageDetector {
 	 * Using rgb-descriptors
 	 */
 	public Mat imgDescriptor_rgb(TrainingImage train_img)
-    {
-    	Mat img = train_img.image();
-    	Mat imgDescriptor = new Mat();
-    	// detect the matrix of key points of that image
+	{
+		Mat img = train_img.image();
+		Mat imgDescriptor = new Mat();
+		// detect the matrix of key points of that image
 		MatOfKeyPoint imgKeyPoints = new MatOfKeyPoint();
 		fDetector.detect(img, imgKeyPoints);
 
@@ -332,9 +347,9 @@ public class ImageDetector {
 			}
 		}
 
-    	Mat imgDescriptor_r = new Mat();
-    	Mat imgDescriptor_g = new Mat();
-    	Mat imgDescriptor_b = new Mat();
+		Mat imgDescriptor_r = new Mat();
+		Mat imgDescriptor_g = new Mat();
+		Mat imgDescriptor_b = new Mat();
 		dExtractor.compute(img_r,imgKeyPoints, imgDescriptor_r);
 		dExtractor.compute(img_g,imgKeyPoints, imgDescriptor_g);
 		dExtractor.compute(img_b,imgKeyPoints, imgDescriptor_b);
@@ -359,7 +374,7 @@ public class ImageDetector {
 		train_img.setKeyPoints(imgKeyPoints);
 		train_img.setDescriptors(imgDescriptor);
 		return imgDescriptor;
-    }
+	}
 	
 	/*
 	 * Method that returns a matrix of descriptors for a given image
@@ -450,10 +465,10 @@ public class ImageDetector {
 			}
 		}
 
-    	// location filter
-    	HashMap<TrainingImage,Integer> filtered_hm = locationFilter(hm,query_image);
-    	hm = filtered_hm;
-    	
+		// location filter
+		HashMap<TrainingImage,Integer> filtered_hm = locationFilter(hm,query_image);
+		hm = filtered_hm;
+
 		// search for the image that matches the largest number of descriptors.
 		TrainingImage bestMatch= null;
 		TrainingImage secondBestMatch= null;
@@ -506,25 +521,25 @@ public class ImageDetector {
 	 * @param query_image 
 	 * @return the map of images within the location bound
 	 */
-    public HashMap<TrainingImage,Integer> locationFilter(HashMap<TrainingImage,Integer> hm, TrainingImage query_image)
-    {
-    	Location query_location = query_image.location();
-    	if(query_location == null){
-    		Log.i(TAG, "Image's location is not available");
-    		return hm;
-    	}else{
-        	HashMap<TrainingImage,Integer> new_hm = new HashMap<TrainingImage,Integer>();
-	    	for(TrainingImage trainImg: hm.keySet()){
-	    		double distance = query_location.distanceTo(trainImg.location());
-	    		if(distance < distance_bound){
-	    			int count = hm.get(trainImg);
-	    			new_hm.put(trainImg,count);
-	    		}
-	    	}
-	    	return new_hm;
-    	}
-    }
-    
+	public HashMap<TrainingImage,Integer> locationFilter(HashMap<TrainingImage,Integer> hm, TrainingImage query_image)
+	{
+		Location query_location = query_image.location();
+		if(query_location == null){
+			Log.i(TAG, "Image's location is not available");
+			return hm;
+		}else{
+			HashMap<TrainingImage,Integer> new_hm = new HashMap<TrainingImage,Integer>();
+			for(TrainingImage trainImg: hm.keySet()){
+				double distance = query_location.distanceTo(trainImg.location());
+				if(distance < distance_bound){
+					int count = hm.get(trainImg);
+					new_hm.put(trainImg,count);
+				}
+			}
+			return new_hm;
+		}
+	}
+
 	/*
 	 * Method that draws the features of the image
 	 * @param rgba the image to be detected features and drawn to 
