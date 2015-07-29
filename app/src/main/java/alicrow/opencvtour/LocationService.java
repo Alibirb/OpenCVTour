@@ -51,6 +51,10 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 	}
 
 	public void stopLocationUpdates() {
+		if(!_google_api_client.isConnected()) {
+			/// Not connected yet. No need to remove location updates.
+			return;
+		}
 		LocationServices.FusedLocationApi.removeLocationUpdates(_google_api_client, this);
 		Log.d(TAG, "stopping location updates");
 	}

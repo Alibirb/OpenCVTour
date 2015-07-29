@@ -66,6 +66,7 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
 		getActivity().findViewById(R.id.fab).setOnClickListener(this);
+		getActivity().findViewById(R.id.help_button).setOnClickListener(this);
 	}
 
 	@Override
@@ -74,6 +75,9 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 			case R.id.fab:
 				Tour.setSelectedTour(Tour.addNewTour());
 				startActivityForResult(new Intent(getActivity(), EditTourActivity.class), EditTourActivity.EDIT_TOUR_REQUEST);
+				break;
+			case R.id.help_button:
+				startActivity(new Intent(getActivity(), HelpActivity.class));
 				break;
 		}
 	}

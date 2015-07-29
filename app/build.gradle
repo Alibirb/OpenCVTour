@@ -8,7 +8,7 @@ android {
 		main {
 			manifest.srcFile 'AndroidManifest.xml'
 			res.srcDirs = ['res']
-			assets.srcDirs = ['assets']
+			assets.srcDirs = ['assets', 'src/main/assets', 'src/main/assets/']
 		}
 
 		androidTest.setRoot('tests')

@@ -7,6 +7,10 @@
 	<string name="title_activity_edit_tour">EditTourActivity</string>
 	<string name="title_activity_follow_tour">FollowTourActivity</string>
 	<string name="title_activity_tour_list">TourListActivity</string>
+	<string name="title_activity_help">Help</string>
+	<string name="title_activity_about">About</string>
+	<string name="report_issue_url">https://github.com/WriterOfAlicrow/OpenCVTour/issues</string>
+	<string name="tips">GPS can greatly improve accuracy\nGPS works better with Wifi on\nTo rearrange tour items, long-press and drag them\nAny tour in your Downloads folder is automatically imported\nImported tours can\'t be edited</string>
 	
 	<!-- Thanh's stuff -->
     <string name="menu_take_photo">Take photo</string>

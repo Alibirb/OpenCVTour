@@ -97,6 +97,15 @@
 	        </intent-filter>
         </activity>
 
+	    <activity
+		    android:name=".HelpActivity"
+		    android:label="@string/title_activity_help" >
+	    </activity>
+	    <activity
+		    android:name="com.h6ah4i.android.example.advrecyclerview.about.AboutActivity"
+		    android:label="@string/title_activity_about" >
+	    </activity>
+
 
 	    <activity
 		    android:name="com.thanh.photodetector.MainActivity"
