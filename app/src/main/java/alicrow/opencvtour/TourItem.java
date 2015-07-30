@@ -37,7 +37,7 @@ public class TourItem {
 
 	private String _name;
 	private String _description;
-	private String _directions;
+	private String _directions;     /// Directions to follow to help the user find the tour item
 	private String _main_image_filepath = "";    /// filepath of the TourItem's main image, to be displayed in thumbnails
 	private ArrayList<String> _image_filepaths = new ArrayList<>();
 	private String _audio_filepath = "";
@@ -89,7 +89,6 @@ public class TourItem {
 				gps_data.put("accuracy", _location.getAccuracy());
 			if (_location.hasAltitude())
 				gps_data.put("altitude", _location.getAltitude());
-			/// bearing? Could be useful. Tells us where the user is facing.
 			gps_data.put("latitude", _location.getLatitude());
 			gps_data.put("longitude", _location.getLongitude());
 
@@ -186,7 +185,7 @@ public class TourItem {
 			else
 				_main_image_filepath = _image_filepaths.get(0);
 		}
-		/// FIXME: Needs to remove the image from the ImageDetector
+		/// FIXME: Should remove the image from the ImageDetector.
 	}
 
 	public Location getLocation() {

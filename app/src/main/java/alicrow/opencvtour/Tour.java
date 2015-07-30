@@ -45,16 +45,16 @@ public class Tour {
 	private static Tour _currentTour;
 	private static ArrayList<Tour> _tours;
 	private static File _tours_directory;  /// directory to save our Tours in
-	private static File _imported_tours_directory;
+	private static File _imported_tours_directory;  /// directory of tours that we imported from an archive. These can't be edited.
 
 	private ArrayList<TourItem> _tour_items;
 	private boolean _gps_enabled;
 	private boolean _enforce_order;   /// indicates if the TourItems must be visited in sequence
 	private String _name;
 	private ImageDetector _detector = new ImageDetector();
-	private File _directory;
+	private File _directory;    /// directory we save this tour in
 	private boolean _editable = true;
-	private double _item_range;
+	private double _item_range; /// if GPS is enabled, we'll only check items within _item_range meters of the current location.
 
 	public static Tour getCurrentTour() {
 		if(_currentTour == null)
@@ -72,16 +72,12 @@ public class Tour {
 		return _tours;
 	}
 
+	/**
+	 * Loads the tours from disk
+	 * @param context a context, necessary in order to retrieve the directory for the app's data.
+	 */
 	private static void loadTours(Context context) {
 		_tours = new ArrayList<>();
-
-		if(hasOldToursDirectory())
-			for(File tour_file : getOldToursDirectory().listFiles()) {
-				if(tour_file.isFile() && tour_file.getName().endsWith(".yaml") && !tour_file.getName().endsWith(".descriptors.yaml")) {
-					/// Old way that Tours were saved. We'll load it, then save it (in the new manner), then delete the old version.
-					convertFromOldFormat(tour_file, context);
-				}
-			}
 
 		for(File dir : getToursDirectory(context).listFiles()) {
 			if(dir.isDirectory() && !dir.getName().equals("imported")) {
@@ -113,6 +109,7 @@ public class Tour {
 			}
 		}
 
+		/// Load imported tours. These can't be edited, since we don't have the image files for them (just the image descriptors).
 		for(File dir : getImportedToursDirectory(context).listFiles()) {
 			if(dir.isDirectory()) {
 				try {
@@ -158,64 +155,6 @@ public class Tour {
 
 		return _imported_tours_directory;
 	}
-	private static File getOldToursDirectory() {
-		Log.i(TAG, Environment.getExternalStorageState());
-
-		File old_tour_directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour");
-		if(!old_tour_directory.exists())
-			Log.e(TAG, "Old tour directory does not exist");
-
-		return old_tour_directory;
-	}
-	private static boolean hasOldToursDirectory() {
-		Log.i(TAG, Environment.getExternalStorageState());
-
-		return (new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "opencvtour")).exists();
-	}
-	/// Converts a Tour saved in an old format to the new format
-	private static File convertFromOldFormat(File old_tour_file, Context context) {
-		Log.i(TAG, "converting '" + old_tour_file + "'");
-		try {
-			Yaml yaml = new Yaml();
-			Map<String, Object> tour_data = (Map<String, Object>) yaml.load(new FileReader(old_tour_file));
-			File new_tour_dir = new File(getToursDirectory(context), (String) tour_data.get("name"));
-			new_tour_dir.mkdir();
-
-			for(Map<String,Object> item_data : (ArrayList<Map<String,Object>>) tour_data.get("items")) {
-				/// Move the images inside the new Tour directory, and save only their filenames, not the full path
-
-				if(item_data.containsKey("main_image") && item_data.get("main_image") != null) {
-					String image_path = (String) item_data.get("main_image");
-					item_data.put("main_image", image_path.substring(image_path.lastIndexOf("/") + 1));
-				}
-
-				if(item_data.containsKey("images") && item_data.get("images") != null) {
-					ArrayList<String> new_image_filenames = new ArrayList<>();
-					for(String image_path : (ArrayList<String>) item_data.get("images")) {
-						File old_image_file = new File(image_path);
-						File new_image_file = new File(new_tour_dir, old_image_file.getName());
-						new_image_filenames.add(old_image_file.getName());
-						File old_descriptors_file = new File(image_path +".descriptors.yaml");
-						old_descriptors_file.delete();
-						if (old_image_file.renameTo(new_image_file))
-							Log.i(TAG, "successfully moved image file " + old_image_file);
-						else
-							Log.e(TAG, "failed to rename file " + old_image_file);
-					}
-					item_data.put("images", new_image_filenames);
-				}
-			}
-			File new_tour_file = new File(new_tour_dir, "tour.yaml");
-			FileWriter writer = new FileWriter(new_tour_file);
-			yaml.dump(tour_data, writer);
-			writer.close();
-			old_tour_file.renameTo(new File(old_tour_file.getPath() + ".old"));
-			return new_tour_dir;
-		} catch (IOException e) {
-			Log.e(TAG, e.toString());
-			return null;
-		}
-	}
 
 
 	public Tour() {
@@ -228,7 +167,7 @@ public class Tour {
 		loadFromFile(file);
 	}
 
-	/// Return a File for the directory this Tour is stored in.
+	/// Return a File object representing the directory this Tour is stored in.
 	public File getDirectory() {
 		if(_directory != null)
 			return _directory;
@@ -237,8 +176,8 @@ public class Tour {
 	}
 
 	/**
-	 * Saves this Tour to a Map so we can export it.
-	 * @return a map containing the data from this Tour that we want to save
+	 * Saves this Tour to a Map so we can save it to disk or export it.
+	 * @return a Map containing the data from this Tour that we want to save
 	 */
 	public Map<String,Object> saveToMap() {
 		Map<String, Object> data = new HashMap<>();
@@ -254,6 +193,11 @@ public class Tour {
 
 		return data;
 	}
+
+	/**
+	 * Load a Map containing the tour's data
+	 * @param data Map containing the tour's data.
+	 */
 	public void loadFromMap(Map<String,Object> data) {
 		setGpsEnabled((Boolean) data.get("gps_enabled"));
 		setEnforceOrder((Boolean) data.get("enforce_order"));
@@ -273,6 +217,9 @@ public class Tour {
 		}
 	}
 
+	/**
+	 * Saves the Tour to disk.
+	 */
 	public void saveToFile() {
 		Map<String, Object> data = saveToMap();
 		Yaml yaml = new Yaml();
@@ -290,6 +237,7 @@ public class Tour {
 		}
 		_detector.saveImageDescriptors();
 	}
+	/// Loads the tour from the given file. The file should be the "tour.yaml" file in the tour's folder.
 	public void loadFromFile(File file) {
 		try {
 			Yaml yaml = new Yaml();

@@ -25,7 +25,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-
+/**
+ * Help screen, displaying usage tips, along with buttons to file a bug report or read the super-fun open source license notices.
+ */
 public class HelpActivity extends AppCompatActivity implements View.OnClickListener {
 
 	@Override
@@ -41,6 +43,7 @@ public class HelpActivity extends AppCompatActivity implements View.OnClickListe
 	public void onClick(View view) {
 		switch(view.getId()) {
 			case R.id.about_button: {
+				/// Launch the about page with all the open source license notices.
 				startActivity(new Intent(this, com.h6ah4i.android.example.advrecyclerview.about.AboutActivity.class));
 				break;
 			}

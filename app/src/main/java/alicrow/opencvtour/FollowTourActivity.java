@@ -67,8 +67,6 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 
 	private MediaPlayer _player = null;
 
-	private Uri _photo_uri;
-
 	private TourItemAdapter _adapter;
 
 	class TourItemAdapter extends RecyclerView.Adapter<TourItemAdapter.ViewHolder> {
@@ -120,7 +118,8 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		super.onCreate(savedInstanceState);
 
 		if(getIntent().getData() != null) {
-			/// FollowTourActivity was launched directly, with a Tour archive. Must initialize OpenCV and load the Tour.
+			/// FollowTourActivity was launched directly, with a Tour archive. Must initialize OpenCV and load the Tour before we can set up the Activity.
+			/// This happens when another app calls our app to open a tour archive.
 
 			OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, new BaseLoaderCallback(this) {
 				@Override
@@ -129,6 +128,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 						case LoaderCallbackInterface.SUCCESS: {
 							Log.i(TAG, "OpenCV loaded successfully");
 
+							/// Load the tour file
 							Uri data = getIntent().getData();
 							String scheme = data.getScheme();
 							File extracted_folder = null;
@@ -179,6 +179,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 	}
 
 
+	/// Called from onCreate once OpenCV is initialized and the current tour is loaded.
 	private void load(Bundle savedInstanceState) {
 		setContentView(R.layout.activity_follow_tour);
 
@@ -195,9 +196,6 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		_visited_item_ids = new ArrayList<>();
 
 		if(savedInstanceState != null) {
-			if (savedInstanceState.containsKey("_photo_uri")) {
-				_photo_uri = Uri.parse(savedInstanceState.getString("_photo_uri"));
-			}
 			if(savedInstanceState.containsKey("_current_location")) {
 				_current_location = savedInstanceState.getParcelable("_current_location");
 			}
@@ -212,6 +210,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 				_remaining_items.add(item);
 		}
 
+		/// Add footer so the floating action button doesn't cover up the list.
 		_adapter = new TourItemAdapter(_remaining_items);
 		WrapAdapter wrap_adapter = new WrapAdapter(_adapter);
 		wrap_adapter.addFooter(getLayoutInflater().inflate(R.layout.empty_list_footer, recycler_view, false));
@@ -228,7 +227,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 	public void onClick(View v) {
 		switch(v.getId()) {
 			case R.id.fab:
-				_photo_uri = Utilities.takePicture(this, true);
+				Utilities.takePicture(this, true);
 				break;
 			case R.id.exit_button:
 				setResult(RESULT_OK);
@@ -262,6 +261,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		Log.d(TAG, "onDestroy called");
 		unbindLocationService();
 
+		/// Unless we're just reconfiguring the UI (due to screen rotation or similar), we should stop location updates, since we only need them when this activity is running.
 		if(!isChangingConfigurations()) {
 			stopService(new Intent(getApplicationContext(), LocationService.class));
 		}
@@ -279,6 +279,8 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 	protected void onStop() {
 		super.onStop();
 		Log.d(TAG, "onStop called");
+
+		/// Unless we're just reconfiguring the UI (due to screen rotation or similar), we should stop location updates, since we only need them when this activity is running.
 		if(!isChangingConfigurations())
 			if(_connection != null && _connection.getService() != null)
 				_connection.getService().stopLocationUpdates();
@@ -292,8 +294,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		super.onSaveInstanceState(outState);
 		Log.d(TAG, "onSaveInstanceState called");
 
-		if(_photo_uri != null)
-			outState.putString("_photo_uri", _photo_uri.toString());
+		/// Activity must be destroyed and recreated when the screen orientation changes, so we need to save some things so the activity can be recreated if needed.
 
 		if(_connection != null && _connection.getService() != null)
 			_current_location = _connection.getService().getCurrentLocation();
@@ -309,12 +310,14 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 			outState.putLong("current_item_id", _current_item.getId());
 	}
 
+	/// Identify the item the user took a picture of, and progress accordingly
 	private void identifyItem() {
 		Tour current_tour = Tour.getCurrentTour();
-
 		List<TourItem> filtered_items = current_tour.getTourItems();
 
 		if(current_tour.getGpsEnabled()) {
+			/// Filter out distant tour items
+
 			if(_connection.getService() != null)
 				_current_location = _connection.getService().getCurrentLocation();
 			if (_current_location == null) {
@@ -332,24 +335,28 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 			filtered_item_ids.add(item.getId());
 		}
 
-		TourItem detected_item = current_tour.getTourItem(current_tour.getDetector().identifyObject(_photo_uri.getPath(), filtered_item_ids));
+		/// photo_filepath is the filepath we use for temporary images. If this changes, it needs to be changed in Utilities.takePicture() as well.
+		String photo_filepath = new File(getExternalCacheDir(), "temp" + ".jpg").getPath();
+		TourItem detected_item = current_tour.getTourItem(current_tour.getDetector().identifyObject(photo_filepath, filtered_item_ids));
 
 		if(detected_item != null) {
 			Log.i(TAG, "detected item named " + detected_item.getName());
 			if(_current_location != null)
-				Toast.makeText(this, "distance is " + _current_location.distanceTo(detected_item.getLocation()) + " meters", Toast.LENGTH_LONG).show();
+				Log.i(TAG, "distance is " + _current_location.distanceTo(detected_item.getLocation()) + " meters");
 		} else {
 			Log.i(TAG, "got null TourItem");
 			Toast.makeText(this, "No tour item detected.", Toast.LENGTH_SHORT).show();
 		}
 
 		if(detected_item != null && (!current_tour.getEnforceOrder() || getNextTourItem() == detected_item)) {
+			/// Detected a tour item. Update accordingly
 			setCurrentItem(detected_item);
 			if(detected_item.hasAudioFile())
 				playAudio();
 		}
 	}
 
+	/// Plays the audio file associated with the current tour item
 	private void playAudio() {
 		_player = new MediaPlayer();
 		try {
@@ -365,13 +372,18 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 			Log.e(TAG, "prepare() failed");
 		}
 	}
-
 	private void stopAudio() {
 		_player.release();
 		_player = null;
 	}
 
-	/// Filters out any TourItems not within threshold meters of current_location
+	/**
+	 * Filters out distant TourItems
+	 * @param items unfiltered list of tour items
+	 * @param current_location the phone's current location
+	 * @param threshold maximum distance, in meters, a tour item can be from us to pass the filter
+	 * @return a filtered list of tour items within threshold meters of current_location
+ 	 */
 	private static List<TourItem> filterDistantTourItems(List<TourItem> items, Location current_location, double threshold) {
 		List<TourItem> nearby_items = new ArrayList<>();
 		for(TourItem item : items) {
@@ -386,6 +398,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		return nearby_items;
 	}
 
+	/// Set the current tour item and perform necessary updates
 	private void setCurrentItem(TourItem item) {
 		_current_item = item;
 
@@ -394,6 +407,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		((TextView) findViewById(R.id.current_tour_item_name)).setText(item.getName());
 		((TextView) findViewById(R.id.current_tour_item_description)).setText(item.getDescription());
 
+		// mark that item as visited
 		if(!_visited_item_ids.contains((int) item.getId()))
 			_visited_item_ids.add((int) item.getId());
 
@@ -403,13 +417,17 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		updateDisplay();
 	}
 
+	/// updates the UI when we reach a new tour item.
 	private void updateDisplay() {
+		/// There are three different sets of UI elements we can display: if the tour items have to be visited in order, we just display the next item in the list; if the tour can be followed in any order, we display a list of the remaining items; if all items have already been visited, then we display "tour complete" along with buttons to restart or exit.
+		/// We need to figure out which elements to show, and set the unused elements to "GONE" so they won't show up or affect the layout.
+
 		if(Tour.getCurrentTour().getEnforceOrder()) {
 			findViewById(R.id.remaining_items_header).setVisibility(View.GONE);
 			findViewById(R.id.remaining_items_list).setVisibility(View.GONE);
 			findViewById(R.id.directions).setVisibility(View.VISIBLE);
 			if(getNextTourItem() == null) {
-				/// End of tour.
+				/// End of tour. Hide next_item_container and the floating action button, and display tour_complete_container
 				findViewById(R.id.next_item_container).setVisibility(View.GONE);
 				findViewById(R.id.fab).setVisibility(View.GONE);
 				findViewById(R.id.tour_complete_container).setVisibility(View.VISIBLE);
@@ -424,7 +442,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		} else {
 			findViewById(R.id.next_item_container).setVisibility(View.GONE);
 			if(_remaining_items.isEmpty()) {
-				/// End of tour.
+				/// End of tour. Hide the list of remaining items and the floating action button, and display tour_complete_container
 				findViewById(R.id.remaining_items_header).setVisibility(View.GONE);
 				findViewById(R.id.remaining_items_list).setVisibility(View.GONE);
 				findViewById(R.id.fab).setVisibility(View.GONE);
@@ -433,6 +451,7 @@ public class FollowTourActivity extends AppCompatActivity implements View.OnClic
 		}
 	}
 
+	/// returns the tour item that comes after the current item, or null if the tour is over
 	private TourItem getNextTourItem() {
 		int index;
 		if(_current_item == null)

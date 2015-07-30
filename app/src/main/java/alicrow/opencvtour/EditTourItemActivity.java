@@ -57,14 +57,13 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 
 	/// Request codes for Intents
 	public static final int EDIT_TOUR_ITEM_REQUEST = 0x0003;
-	private static final int REQUEST_IMAGE_CAPTURE = 1;
 
 	private TourItem _tour_item;
+	private ArrayList<String> _images_selected = new ArrayList<>();
 
 	private Uri _photo_uri; /// uri we told the camera app to save to. We store this so we know where to find the image after the camera app returns
 
 	private Menu _context_menu;
-	private ArrayList<String> _images_selected = new ArrayList<>();
 
 	private MediaPlayer _player = null;
 	private MediaRecorder _recorder = null;
@@ -87,7 +86,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 	}
 
 	/**
-	 * Adapter to display the TourItem's images
+	 * Adapter to display thumbnails of the TourItem's images
 	 */
 	public class TourItemImageAdapter extends BaseAdapter {
 		private TourItem _item;
@@ -96,25 +95,29 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 			_item = item;
 		}
 
+		@Override
 		public int getCount() {
 			return _item.getImageFilepaths().size();
 		}
 
+		@Override
 		public Object getItem(int position) {
 			return _item.getImageFilepaths().get(position);
 		}
 
+		@Override
 		public long getItemId(int position) {
 			return position;
 		}
 
+		@Override
 		public View getView(final int position, View convertView, final ViewGroup parent) {
 			Log.v(TAG, "getView called");
 			final ImageView image_view;
 			final FrameLayout frame_layout;
 			if (convertView == null) {
-				Log.v(TAG, "creating new ImageView");
 				// We don't have an existing view to convert, so we need to create a new view
+				Log.v(TAG, "creating new ImageView");
 				frame_layout = (FrameLayout) getLayoutInflater().inflate(R.layout.selectable_image, parent, false);
 				image_view = (ImageView) frame_layout.findViewById(R.id.image);
 				image_view.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -124,6 +127,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 				image_view = (ImageView) frame_layout.findViewById(R.id.image);
 			}
 
+			/// Load image thumbnail
 			String image_filename = _item.getImageFilepaths().get(position);
 			int column_width = ((GridView) parent).getRequestedColumnWidth() - Utilities.dp_to_px(8);    /// 8dp padding;
 			Utilities.loadBitmap(image_view, image_filename, column_width, column_width, EditTourItemActivity.this);
@@ -134,6 +138,8 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 
 	@Override
 	public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+		/// called when an image is selected or deselected.
+
 		if(checked)
 			_images_selected.add(_tour_item.getImageFilepaths().get(position));
 		else
@@ -175,6 +181,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 		mode.getMenuInflater().inflate(R.menu.context_menu_edit_tour_item, menu);
 		_context_menu = menu;
 
+		/// If only a single image is selected, the user can set that as the main image, so we add that option to the contextual action bar
 		if(_images_selected.size() == 1)
 			_context_menu.findItem(R.id.menu_set_as_main_image).setVisible(true);
 		else
@@ -211,6 +218,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 	@Override
 	protected void onStop() {
 		super.onStop();
+		/// Unless we're just reconfiguring the UI (due to screen rotation or similar), we should stop location updates, since we only need them when this activity is running.
 		if(!isChangingConfigurations())
 			if(_connection != null && _connection.getService() != null)
 				_connection.getService().stopLocationUpdates();
@@ -240,7 +248,6 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 		((EditText) findViewById(R.id.edit_tour_item_directions)).setText(_tour_item.getDirections());
 
 		if(_tour_item.getLocation() != null) {
-			Log.i(TAG, "loading GPS coordinates...");
 			((TextView) findViewById(R.id.tour_item_location)).setText("location: " + _tour_item.getLocation().getLatitude() + ", " + _tour_item.getLocation().getLongitude() + ", accuracy: " + _tour_item.getLocation().getAccuracy() + " meters");
 		}
 
@@ -256,6 +263,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 
 		bindLocationService();
 
+		/// Load stuff from a previous instance
 		if(savedInstanceState != null) {
 			if (savedInstanceState.containsKey("_photo_uri")) {
 				_photo_uri = Uri.parse(savedInstanceState.getString("_photo_uri"));
@@ -266,18 +274,19 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 		}
 	}
 
+	/// Applies changes made to the TourItem.
 	private void applyChanges() {
 		_tour_item.setName(((EditText) findViewById(R.id.edit_tour_item_name)).getText().toString());
 		_tour_item.setDescription(((EditText) findViewById(R.id.edit_tour_item_description)).getText().toString());
 		_tour_item.setDirections(((EditText) findViewById(R.id.edit_tour_item_directions)).getText().toString());
-
-		setResult(RESULT_OK);
-		finish();
 	}
 
 	@Override
 	public void onBackPressed() {
+		/// Apply the changes the user made, and then finish the activity. Without this, all changes would be lost as soon as the user hits the back button.
 		applyChanges();
+		setResult(RESULT_OK);
+		finish();
 	}
 
 	@Override
@@ -333,6 +342,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 		}
 	}
 
+	/// Play the item's audio recording
 	private void startPlaying() {
 		_player = new MediaPlayer();
 		try {
@@ -361,6 +371,7 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 		_player = null;
 	}
 
+	/// Record audio for the item.
 	private void startRecording() {
 		_recorder = new MediaRecorder();
 		_recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -387,6 +398,9 @@ public class EditTourItemActivity extends AppCompatActivity implements View.OnCl
 	protected void onSaveInstanceState(@NonNull Bundle outState) {
 		super.onSaveInstanceState(outState);
 
+		/// Activity must be destroyed and recreated when the screen orientation changes, so we need to save some things so the activity can be recreated if needed.
+
+		/// If the user changed the phone's orientation to take a better photo, our activity will be destroyed and recreated upon returning from the camera app, so we need to save the location of the photo.
 		if(_photo_uri != null)
 			outState.putString("_photo_uri", _photo_uri.toString());
 

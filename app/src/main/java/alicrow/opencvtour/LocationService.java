@@ -161,13 +161,13 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 			l.onLocationUpdated(location);
 	}
 
+	/// add/remove listeners which will be notified when the location changes. We're not using these right now (our activities are only interested in querying the location, not getting updates), but they could be useful in the future
 	public void addListener(LocationUpdateListener l) {
 		_listeners.add(l);
 	}
 	public void removeListener(LocationUpdateListener l) {
 		_listeners.remove(l);
 	}
-
 
 	/**
 	 * Interface for other classes that want to know when the Location is updated.

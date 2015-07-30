@@ -189,12 +189,12 @@ public class Utilities {
 	 * Contains the parameters used to generate a smaller Bitmap from a larger image.
 	 */
 	public static class ReducedBitmapInfo {
-		public String full_image_filename;
+		public String full_image_filepath;
 		public int width;
 		public int height;
 
-		public ReducedBitmapInfo(String filename, int width, int height) {
-			this.full_image_filename = filename;
+		public ReducedBitmapInfo(String filepath, int width, int height) {
+			this.full_image_filepath = filepath;
 			this.width = width;
 			this.height = height;
 		}
@@ -202,10 +202,15 @@ public class Utilities {
 		/// Using ReducedBitmapInfo as a key in our cache doesn't work (no clue why), so we use Strings instead.
 		@Override
 		public String toString() {
-			return full_image_filename + " " + width + " " + height;
+			return full_image_filepath + " " + width + " " + height;
 		}
 	}
 
+	/**
+	 * Adds an image thumbnail to our cache
+	 * @param info information about the thumbnail (name of full imgae file, and dimensions of the thumbnail)
+	 * @param bitmap the bitmap to cache
+	 */
 	public static void addToCache(ReducedBitmapInfo info, Bitmap bitmap) {
 		if(_bitmap_cache.get(info.toString()) == null) {
 			Log.v(TAG, "Adding bitmap to cache");
@@ -213,6 +218,9 @@ public class Utilities {
 		}
 	}
 
+	/**
+	 * Extension of BitmapDrawable that keeps track of what BitmapWorkerTask is loading its image
+	 */
 	static class AsyncDrawable extends BitmapDrawable {
 		private final WeakReference<BitmapWorkerTask> bitmapWorkerTaskReference;
 
@@ -226,8 +234,16 @@ public class Utilities {
 		}
 	}
 
-	public static void loadBitmap(ImageView view, String filename, int width, int height, Context context) {
-		ReducedBitmapInfo info = new ReducedBitmapInfo(filename, width, height);
+	/**
+	 * Asynchronously loads a thumbnail of the given image into the given view
+	 * @param view the ImageView to load the bitmap into
+	 * @param filepath filepath of the (full-size) image to load
+	 * @param width desired width of the thumbnail
+	 * @param height desired height of the thumbnail
+	 * @param context a context, used to retireve the path where we're caching thumbnails on disk.
+	 */
+	public static void loadBitmap(ImageView view, String filepath, int width, int height, Context context) {
+		ReducedBitmapInfo info = new ReducedBitmapInfo(filepath, width, height);
 		Log.v(TAG, "loading bitmap " + info.toString());
 
 		Bitmap bitmap = _bitmap_cache.get(info.toString());
@@ -235,7 +251,7 @@ public class Utilities {
 			Log.v(TAG, "bitmap already created");
 			view.setImageBitmap(bitmap);
 		} else {
-
+			/// Find (or create) the file containing the cached version of this image at the right size
 			File cached_image_file = new File(context.getExternalCacheDir(), info.toString().substring(Tour.getToursDirectory(context).getPath().length()) + ".jpg");
 			cached_image_file.getParentFile().mkdir();
 
@@ -245,10 +261,13 @@ public class Utilities {
 
 			final AsyncDrawable asyncDrawable = new AsyncDrawable(context.getResources(), placeholder_bitmap, task);
 			view.setImageDrawable(asyncDrawable);
-			task.execute(filename);
+			task.execute(filepath);
 		}
 	}
 
+	/**
+	 * @return the BitmapWorkerTask associated with imageView
+	 */
 	private static BitmapWorkerTask getBitmapWorkerTask(ImageView imageView) {
 		if (imageView != null) {
 			final Drawable drawable = imageView.getDrawable();
@@ -260,6 +279,9 @@ public class Utilities {
 		return null;
 	}
 
+	/**
+	 * Task to load a smaller version of a picture into an ImageView
+	 */
 	public static class BitmapWorkerTask extends AsyncTask<String, Void, Bitmap> {
 		private final WeakReference<ImageView> imageViewReference;
 		private int _width, _height;
@@ -344,26 +366,35 @@ public class Utilities {
 		return (int)( dp * scale + 0.5f);
 	}
 
-	public static Uri createImageFile(Context context, boolean is_temp) throws IOException {
+	/**
+	 * Creates a file to store an image in
+	 * @param context a Context so we can retrieve our app's storage directory
+	 * @param is_temp whether the image is meant to be temporary. If so, we'll use the "temp.jpg" filename, so it will be overwritten the next time we take a temporary photo
+	 * @return a Uri for the file to save the photo in
+	 */
+	public static Uri createImageFile(Context context, boolean is_temp) {
 		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		File file;
 		if(is_temp)
+			/// this is the file we use for temporary images. If this changes, it needs to be changed in FollowTourActivity.identifyItem() as well.
 			file = new File(context.getExternalCacheDir(), "temp" + ".jpg");
 		else
 			file = new File(Tour.getCurrentTour().getDirectory(), timestamp + ".jpg");
 		return Uri.fromFile(file);
 	}
 
+	/**
+	 * Starts an activity to take a picture
+	 * @param activity an Activity, necessary in order to start activities
+	 * @param is_temp whether the image is meant to be temporary. If so, we'll use the "temp.jpg" filename, so it will be overwritten the next time we take a temporary photo
+	 * @return the Uri of the file the photo will be saved in
+	 */
 	public static Uri takePicture(Activity activity, boolean is_temp) {
 		Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 		Uri photo_uri = null;
 		if (intent.resolveActivity(activity.getPackageManager()) != null) {
 			// Create a file to save the photo to
-			try {
-				photo_uri = Utilities.createImageFile(activity, is_temp);
-			} catch (IOException ex) {
-				Log.e(TAG, ex.toString());
-			}
+			photo_uri = Utilities.createImageFile(activity, is_temp);
 
 			if (photo_uri != null) {
 				intent.putExtra(MediaStore.EXTRA_OUTPUT, photo_uri);
@@ -376,6 +407,12 @@ public class Utilities {
 		return photo_uri;
 	}
 
+	/**
+	 * Compresses a folder
+	 * @param input_path filepath of the folder to compress
+	 * @param output_path filepath of the archive to save
+	 * @param skip_images whether to ignore image files in the folder. These can take up a *lot* of space, so it's best to skip them if they're not needed (the image descriptors are still saved, so OpenCV has what it needs from the images)
+	 */
 	public static void compressFolder(String input_path, String output_path, boolean skip_images) {
 		try {
 			FileOutputStream fos = new FileOutputStream(output_path);

@@ -56,7 +56,6 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 
 	private Tour _tour;
 	private TourItemAdapter _adapter;
-	private RecyclerView _recycler_view;
 
 	/**
 	 * Adapter to display TourItems in our list
@@ -209,14 +208,14 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 
 		_tour = Tour.getCurrentTour();
 
-		_recycler_view = (RecyclerView) getActivity().findViewById(R.id.recycler_view);
-		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
+		RecyclerView recycler_view = (RecyclerView) getActivity().findViewById(R.id.recycler_view);
+		recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
 		ArrayList<TourItem> tour_items = _tour.getTourItems();
 
 		_adapter = new TourItemAdapter(tour_items);
 
-		/// We're using two different RecyclerView adapter libraries, which were not designed to work together. This class provides a WrapAdapter from eyeem's library that also implements DraggableItemAdapter from h6ah4i's library (by passing to the TourItemAdapter that actually handles that stuff).
+		/// We're using two different RecyclerView adapter libraries, which were not designed to work together. CrazyWrapAdapter provides a WrapAdapter from eyeem's library that also implements DraggableItemAdapter from h6ah4i's library (by passing to the TourItemAdapter that actually handles that stuff).
 		class CrazyWrapAdapter extends WrapAdapter implements DraggableItemAdapter<TourItemAdapter.ViewHolder> {
 
 			public CrazyWrapAdapter(RecyclerView.Adapter wrappedAdapter) {
@@ -237,8 +236,8 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 		}
 
 		CrazyWrapAdapter wrap_adapter = new CrazyWrapAdapter(_adapter);
-		wrap_adapter.setOnItemClickListener(_recycler_view, this);
-		wrap_adapter.addFooter(getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view, false));
+		wrap_adapter.setOnItemClickListener(recycler_view, this);
+		wrap_adapter.addFooter(getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, recycler_view, false));
 
 
 		/// Stuff for drag and drop functionality:
@@ -252,17 +251,16 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 
 		final GeneralItemAnimator animator = new RefactoredDefaultItemAnimator();
 
-		_recycler_view.setAdapter(drag_drop_adapter);  // requires *wrapped* adapter
-		_recycler_view.setItemAnimator(animator);
+		recycler_view.setAdapter(drag_drop_adapter);  // requires *wrapped* adapter
+		recycler_view.setItemAnimator(animator);
 
 		// Shadow for pre-Lollipop devices (Lollipop has built-in elevation stuff)
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			//noinspection deprecation
-			_recycler_view.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) getResources().getDrawable(R.drawable.material_shadow_z1)));
+			recycler_view.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) getResources().getDrawable(R.drawable.material_shadow_z1)));
 		}
 
-		drag_drop_manager.attachRecyclerView(_recycler_view);
-
+		drag_drop_manager.attachRecyclerView(recycler_view);
 	}
 
 	@Override
@@ -300,6 +298,7 @@ public class TourItemListFragment extends Fragment implements View.OnClickListen
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if(resultCode == Activity.RESULT_OK && requestCode == EditTourItemActivity.EDIT_TOUR_ITEM_REQUEST) {
+			/// EditTourItemActivity has returned. We may need to update our RecyclerView with the item's new properties.
 			_adapter.notifyDataSetChanged();
 		}
 	}

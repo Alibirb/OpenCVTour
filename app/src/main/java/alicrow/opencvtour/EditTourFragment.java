@@ -28,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 
@@ -50,11 +51,11 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 		v.findViewById(R.id.share_tour).setOnClickListener(this);
 		v.findViewById(R.id.follow_tour).setOnClickListener(this);
 
+		/// Set up UI to show current tour info
 		((CheckBox) v.findViewById(R.id.enable_gps)).setChecked(Tour.getCurrentTour().getGpsEnabled());
 		((CheckBox) v.findViewById(R.id.enforce_order)).setChecked(Tour.getCurrentTour().getEnforceOrder());
 		((TextView) v.findViewById(R.id.tour_name)).setText(Tour.getCurrentTour().getName());
 		((TextView) v.findViewById(R.id.item_range)).setText(Double.toString(Tour.getCurrentTour().getItemRange()));
-
 		if(Tour.getCurrentTour().getGpsEnabled())
 			v.findViewById(R.id.range_selection_line).setVisibility(View.VISIBLE);
 		else
@@ -87,17 +88,21 @@ public class EditTourFragment extends Fragment implements View.OnClickListener {
 				Tour.getCurrentTour().setName(((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString());
 				Tour.getCurrentTour().setItemRange(Double.parseDouble(((TextView) getActivity().findViewById(R.id.item_range)).getText().toString()));
 				Tour.getCurrentTour().saveToFile();
+				Toast.makeText(getActivity(), "Tour saved", Toast.LENGTH_SHORT).show();
 				break;
 			}
 			case R.id.share_tour: {
+				/// Save the tour
 				String tour_name = ((TextView) getActivity().findViewById(R.id.tour_name)).getText().toString();
 				Tour.getCurrentTour().setName(tour_name);
 				Tour.getCurrentTour().setItemRange(Double.parseDouble(((TextView) getActivity().findViewById(R.id.item_range)).getText().toString()));
 				Tour.getCurrentTour().saveToFile();
 
+				/// compress the tour
 				File archive = new File(getActivity().getExternalCacheDir(), tour_name + ".zip.tour");
 				Utilities.compressFolder(Tour.getCurrentTour().getDirectory().getPath(), archive.getPath(), true);
 
+				/// Send the tour via some other app
 				Intent intent = new Intent(Intent.ACTION_SEND);
 				intent.setType("application/tour");
 				intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(archive));

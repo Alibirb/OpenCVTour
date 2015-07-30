@@ -91,7 +91,7 @@ public class ImageDetector {
 	protected static final String ERROR = "Error in ImageDetector";
 
 	/*
-	 * List of all train images
+	 * List of all training images
 	 */
 	private List<TrainingImage> training_library;
 
@@ -151,17 +151,9 @@ public class ImageDetector {
 		training_library.add(training_img);
 	}
 
-	public void clearLibrary()
-	{
-		// clear ImageDetector's library
-		training_library= new ArrayList<TrainingImage>();
-		// clear dMatcher's internal library
-		dMatcher.clear();
-	}
-
 	/*
 	 * Method that identifies the tour item the given image belongs to
-	 * @param iamge_path the path of the image used for identification
+	 * @param image_path the path of the image used for identification
 	 * @param item_ids the list of qualified items
 	 * @return the id
 	 */
@@ -240,7 +232,10 @@ public class ImageDetector {
 	}
 
 	/*
-	 * 
+	 * Filters matches to only include images from the given tour item ids
+	 * @param matches list of matches to filter
+	 * @param item_ids list of items we want included in the results
+	 * @return the filtered matches
 	 */
 	private List<DMatch> filterByItem(List<DMatch> matches, List<Long> item_ids) {
 		List<DMatch> filtered_matches = new ArrayList<>();
@@ -395,7 +390,7 @@ public class ImageDetector {
 	}
 
 	/*
-	 * 
+	 * Loads image descriptors from a map of the data.
 	 */
 	public Mat loadImageDescriptors(Map<String,Object> data) {
 		Mat m = new Mat((Integer) data.get("rows"),(Integer) data.get("columns"),(Integer) data.get("type"));
@@ -406,7 +401,7 @@ public class ImageDetector {
 	}
 	
 	/*
-	 * 
+	 * Loads image descriptors from the given file
 	 */
 	public Mat loadImageDescriptors(File file) {
 		try {
@@ -422,7 +417,7 @@ public class ImageDetector {
 	}
 	
 	/*
-	 * 
+	 * Saves the image descriptors to disk so they can be loaded up later (or exported).
 	 */
 	public void saveImageDescriptors() {
 		for(TrainingImage image : training_library) {

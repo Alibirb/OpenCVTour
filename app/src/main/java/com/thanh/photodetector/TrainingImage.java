@@ -29,8 +29,8 @@ import android.location.Location;
 import android.media.ExifInterface;
 
 public class TrainingImage {
-	private String path_id;
-	private long tour_id;
+	private String path_id; /// pathname of the image
+	private long tour_id;   /// id of the tour this image is from
 	private Mat image;
 	private MatOfKeyPoint key_points;
 	private Mat descriptors;

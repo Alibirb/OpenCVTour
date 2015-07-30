@@ -60,6 +60,7 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
+		/// Must wait until OpenCV is initialized before loading the tours (since we load image descriptors).
 		BaseLoaderCallback _loader_callback = new BaseLoaderCallback(getActivity()) {
 			@Override
 			public void onManagerConnected(int status) {
@@ -67,6 +68,8 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 					case LoaderCallbackInterface.SUCCESS:
 					{
 						Log.i(TAG, "OpenCV loaded successfully");
+
+						/// Add footer so the floating action button doesn't cover up the list.
 						_adapter = new TourAdapter(Tour.getTours(getActivity()));
 						WrapAdapter wrap_adapter = new WrapAdapter(_adapter);
 						wrap_adapter.addFooter(getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view, false));
@@ -108,6 +111,9 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 		}
 	}
 
+	/**
+	 * Adapter to display tours
+	 */
 	class TourAdapter extends RecyclerView.Adapter<TourAdapter.ViewHolder> {
 		final List<Tour> _tours;
 

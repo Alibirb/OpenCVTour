@@ -73,6 +73,7 @@
         <activity
             android:name=".FollowTourActivity"
             android:label="@string/title_activity_follow_tour" >
+	        <!-- These intent filters allow *some* other apps (e.g. gmail) to open tour archives with our app. It doesn't work for everything, though.-->
 			<intent-filter>     <!-- matches file in file explorer with no mime type specified -->
 				<action android:name="android.intent.action.VIEW"/>
 				<action android:name="android.intent.action.EDIT"/>

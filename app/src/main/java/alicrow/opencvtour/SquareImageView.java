@@ -44,6 +44,7 @@ public class SquareImageView extends ImageView {
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
+		/// set the height equal to the width so the image is square.
 		int width = getMeasuredWidth();
 		setMeasuredDimension(width, width);
 	}
