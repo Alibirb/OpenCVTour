@@ -2,12 +2,14 @@
 
 Android app to create and follow virtual tours, using OpenCV to identify objects of interest.
 
-Created as a Lafayette College Computer Science department research project.
+Created by Daniel Piros and Thanh Vu as a Lafayette College Computer Science department research project.
+
+OpenCV Tour is licensed under the [GNU General Public License, version 3.0](http://www.gnu.org/licenses/gpl-3.0.html). See [`COPYING`](COPYING) for more details.
 
 
 ## Running
 
-This repository contains both an Android Studio project and an Eclipse ADT project. They each contain two targets (or at least they should): "app" runs the normal application, and "testImageRecognition" runs an application used to test the image recognition.
+This repository contains both an Android Studio project and an Eclipse ADT project. Either one should work, but Android Studio makes it much easier to handle dependencies, and Google says you should use it.
 
 Download the OpenCV 3.0.0 android sdk, and extract it to the base folder of the repository. Ensure it's named "OpenCV-android-sdk"
 

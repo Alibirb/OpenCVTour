@@ -1,3 +1,22 @@
+/*
+ * Copyright 2015 Lafayette College
+ *
+ * This file is part of OpenCVTour.
+ *
+ * OpenCVTour is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenCVTour is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenCVTour.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package alicrow.opencvtour;
 
 import android.app.Fragment;
@@ -41,6 +60,7 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
+		/// Must wait until OpenCV is initialized before loading the tours (since we load image descriptors).
 		BaseLoaderCallback _loader_callback = new BaseLoaderCallback(getActivity()) {
 			@Override
 			public void onManagerConnected(int status) {
@@ -48,6 +68,8 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 					case LoaderCallbackInterface.SUCCESS:
 					{
 						Log.i(TAG, "OpenCV loaded successfully");
+
+						/// Add footer so the floating action button doesn't cover up the list.
 						_adapter = new TourAdapter(Tour.getTours(getActivity()));
 						WrapAdapter wrap_adapter = new WrapAdapter(_adapter);
 						wrap_adapter.addFooter(getActivity().getLayoutInflater().inflate(R.layout.empty_list_footer, _recycler_view, false));
@@ -66,6 +88,7 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 		_recycler_view.setLayoutManager(new LinearLayoutManager(getActivity()));
 
 		getActivity().findViewById(R.id.fab).setOnClickListener(this);
+		getActivity().findViewById(R.id.help_button).setOnClickListener(this);
 	}
 
 	@Override
@@ -74,6 +97,9 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 			case R.id.fab:
 				Tour.setSelectedTour(Tour.addNewTour());
 				startActivityForResult(new Intent(getActivity(), EditTourActivity.class), EditTourActivity.EDIT_TOUR_REQUEST);
+				break;
+			case R.id.help_button:
+				startActivity(new Intent(getActivity(), HelpActivity.class));
 				break;
 		}
 	}
@@ -85,6 +111,9 @@ public class TourListFragment extends Fragment implements View.OnClickListener {
 		}
 	}
 
+	/**
+	 * Adapter to display tours
+	 */
 	class TourAdapter extends RecyclerView.Adapter<TourAdapter.ViewHolder> {
 		final List<Tour> _tours;
 

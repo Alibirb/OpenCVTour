@@ -1,3 +1,22 @@
+/*
+ * Copyright 2015 Lafayette College
+ *
+ * This file is part of OpenCVTour.
+ *
+ * OpenCVTour is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenCVTour is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenCVTour.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package alicrow.opencvtour;
 
 import android.app.Service;
@@ -51,6 +70,10 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 	}
 
 	public void stopLocationUpdates() {
+		if(!_google_api_client.isConnected()) {
+			/// Not connected yet. No need to remove location updates.
+			return;
+		}
 		LocationServices.FusedLocationApi.removeLocationUpdates(_google_api_client, this);
 		Log.d(TAG, "stopping location updates");
 	}
@@ -138,13 +161,13 @@ public class LocationService extends Service implements GoogleApiClient.Connecti
 			l.onLocationUpdated(location);
 	}
 
+	/// add/remove listeners which will be notified when the location changes. We're not using these right now (our activities are only interested in querying the location, not getting updates), but they could be useful in the future
 	public void addListener(LocationUpdateListener l) {
 		_listeners.add(l);
 	}
 	public void removeListener(LocationUpdateListener l) {
 		_listeners.remove(l);
 	}
-
 
 	/**
 	 * Interface for other classes that want to know when the Location is updated.

@@ -1,3 +1,22 @@
+/*
+ * Copyright 2015 Lafayette College
+ *
+ * This file is part of OpenCVTour.
+ *
+ * OpenCVTour is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenCVTour is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenCVTour.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package alicrow.opencvtour;
 
 import android.location.Location;
@@ -18,7 +37,7 @@ public class TourItem {
 
 	private String _name;
 	private String _description;
-	private String _directions;
+	private String _directions;     /// Directions to follow to help the user find the tour item
 	private String _main_image_filepath = "";    /// filepath of the TourItem's main image, to be displayed in thumbnails
 	private ArrayList<String> _image_filepaths = new ArrayList<>();
 	private String _audio_filepath = "";
@@ -70,7 +89,6 @@ public class TourItem {
 				gps_data.put("accuracy", _location.getAccuracy());
 			if (_location.hasAltitude())
 				gps_data.put("altitude", _location.getAltitude());
-			/// bearing? Could be useful. Tells us where the user is facing.
 			gps_data.put("latitude", _location.getLatitude());
 			gps_data.put("longitude", _location.getLongitude());
 
@@ -167,7 +185,7 @@ public class TourItem {
 			else
 				_main_image_filepath = _image_filepaths.get(0);
 		}
-		/// FIXME: Needs to remove the image from the ImageDetector
+		/// FIXME: Should remove the image from the ImageDetector.
 	}
 
 	public Location getLocation() {
