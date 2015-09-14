@@ -82,10 +82,10 @@ public class ImageDetector {
 
 	/*
 	 * Default constructor.
-	 * Uses FAST detector, ORB extractor, and BRUTEFORCE_HAMMINGLUT matcher.
+	 * Uses ORB detector, ORB extractor, and BRUTEFORCE_HAMMINGLUT matcher.
 	 */
 	public ImageDetector() {
-		this(FeatureDetector.FAST, DescriptorExtractor.ORB, DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
+		this(FeatureDetector.ORB, DescriptorExtractor.ORB, DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 	}
 
 	/*
